@@ -5,7 +5,6 @@
 pub mod git;
 
 use std::collections::HashMap;
-use std::fmt;
 use std::str;
 
 use anyhow::Result;
@@ -22,6 +21,18 @@ impl Info {
         self.data.insert(k.to_string(), v.as_ref().to_string());
     }
 
+    fn insert_regex(&mut self, re: &Regex, s0: impl AsRef<str>) -> bool {
+        let s = s0.as_ref();
+        if let Some(m) = re.captures(s) {
+            for name in re.capture_names().flatten() {
+                self.insert(name, m.name(name).unwrap().as_str());
+            }
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn get(&self, k: impl AsRef<str>) -> Option<&str> {
         self.data.get(k.as_ref()).map(|s| s.as_str())
     }
@@ -31,18 +42,24 @@ impl Info {
         self.insert("git-describe-tags", s);
         let re = Regex::new(r"^(?P<tag_latest>.*)-(?P<distance>\d+)-g(?P<commit>[0-9a-f]+)$")?;
         let distance;
-        if let Some(m) = re.captures(s) {
-            for label in &["tag_latest", "distance", "commit"] {
-                self.insert(label, m.name(label).unwrap().as_str());
-            }
-            distance = m.name("distance").unwrap().as_str();
+        if self.insert_regex(&re, s) {
+            distance = self.get("distance").unwrap().to_string();
         } else {
             self.insert("tag_latest", s);
             self.insert("distance", "0");
             self.insert("tag_head", s);
-            distance = "0";
+            distance = "0".to_string();
         }
         self.insert("dash_distance", format!("-{}", distance));
+        let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
+        let tag_latest = self.get("tag_latest").unwrap().to_string();
+        if let Some(m) = re.captures(&tag_latest) {
+            self.insert("tag_latest_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
+        }
+        let tag_head = self.get("tag_latest").unwrap().to_string();
+        if let Some(m) = re.captures(&tag_head) {
+            self.insert("tag_head_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
+        }
         Ok(())
     }
 
@@ -66,17 +83,11 @@ impl<'a> IntoIterator for &'a Info {
     }
 }
 
-impl fmt::Display for Info {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (k, v) in &self.data {
-            writeln!(f, "::set-output name={}::{}", k, v)?;
-        }
-        Ok(())
-    }
-}
-
 pub fn main() -> Result<()> {
     let info = Info::from_workspace()?;
-    print!("{}", info);
+    for (k, v) in &info {
+        println!("Setting {}={}", k, v);
+        println!("::set-output name={}::{}", k, v);
+    }
     Ok(())
 }
