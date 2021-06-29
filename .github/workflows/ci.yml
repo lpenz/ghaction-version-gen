@@ -83,8 +83,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
       - id: tag
         uses: ./
       - uses: docker/setup-qemu-action@v1

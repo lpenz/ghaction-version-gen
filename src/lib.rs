@@ -64,6 +64,7 @@ impl Info {
     }
 
     pub fn from_workspace() -> Result<Info> {
+        let _ = git::unshallow();
         let mut info = Info::default();
         if let Ok(gitdescr) = git::describe() {
             info.parse_describe(gitdescr)?;

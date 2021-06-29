@@ -22,3 +22,7 @@ pub fn describe() -> Result<String> {
 pub fn head_commit() -> Result<String> {
     run(&["rev-parse", "--short", "HEAD"])
 }
+
+pub fn unshallow() -> Result<String> {
+    run(&["fetch", "--unshallow", "origin"])
+}
