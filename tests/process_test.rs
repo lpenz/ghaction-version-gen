@@ -18,7 +18,7 @@ fn basic() -> Result<()> {
     let gitdesc = "1.3.1-20-gc5f7a99";
     let mut info = Info::default();
     info.parse_describe(gitdesc)?;
-    assert_eq!(info.get("git-describe-tags"), Some(gitdesc));
+    assert_eq!(info.get("git_describe_tags"), Some(gitdesc));
     assert_eq!(info.get("tag_latest"), Some("1.3.1"));
     Ok(())
 }

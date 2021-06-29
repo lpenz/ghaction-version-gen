@@ -37,13 +37,17 @@ impl Info {
         self.data.get(k.as_ref()).map(|s| s.as_str())
     }
 
+    fn get_(&self, k: impl AsRef<str>) -> String {
+        self.data.get(k.as_ref()).unwrap().to_string()
+    }
+
     pub fn parse_describe(&mut self, s0: impl AsRef<str>) -> Result<()> {
         let s = s0.as_ref();
-        self.insert("git-describe-tags", s);
-        let re = Regex::new(r"^(?P<tag_latest>.*)-(?P<distance>\d+)-g(?P<commit>[0-9a-f]+)$")?;
+        self.insert("git_describe_tags", s);
+        let re = Regex::new(r"^(?P<tag_latest>.*)-(?P<distance>\d+)-g[0-9a-f]+$")?;
         let distance;
         if self.insert_regex(&re, s) {
-            distance = self.get("distance").unwrap().to_string();
+            distance = self.get_("distance");
         } else {
             self.insert("tag_latest", s);
             self.insert("distance", "0");
@@ -52,11 +56,11 @@ impl Info {
         }
         self.insert("dash_distance", format!("-{}", distance));
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
-        let tag_latest = self.get("tag_latest").unwrap().to_string();
+        let tag_latest = self.get_("tag_latest");
         if let Some(m) = re.captures(&tag_latest) {
             self.insert("tag_latest_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
         }
-        let tag_head = self.get("tag_latest").unwrap().to_string();
+        let tag_head = self.get_("tag_latest");
         if let Some(m) = re.captures(&tag_head) {
             self.insert("tag_head_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
         }
@@ -66,11 +70,9 @@ impl Info {
     pub fn from_workspace() -> Result<Info> {
         let _ = git::unshallow();
         let mut info = Info::default();
+        info.insert("commit", &git::head_commit()?);
         if let Ok(gitdescr) = git::describe() {
             info.parse_describe(gitdescr)?;
-        }
-        if info.get("commit").is_none() {
-            info.insert("commit", &git::head_commit()?);
         }
         Ok(info)
     }
