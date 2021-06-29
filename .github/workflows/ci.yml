@@ -73,3 +73,9 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build .
+
