@@ -56,14 +56,14 @@ impl Info {
         }
         self.insert("dash_distance", format!("-{}", distance));
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
-        let tag_latest = self.get_("tag_latest");
-        if let Some(m) = re.captures(&tag_latest) {
-            self.insert("tag_latest_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
-        }
-        let tag_head = self.get_("tag_latest");
-        if let Some(m) = re.captures(&tag_head) {
-            self.insert("tag_head_ltrimv", m.name("tag_ltrimv").unwrap().as_str());
-        }
+        self.insert(
+            "tag_latest_ltrimv",
+            re.replace(&self.get_("tag_latest"), "$tag_ltrimv"),
+        );
+        self.insert(
+            "tag_head_ltrimv",
+            re.replace(&self.get_("tag_latest"), "$tag_ltrimv"),
+        );
         Ok(())
     }
 
