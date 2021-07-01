@@ -4,7 +4,6 @@
 
 pub mod git;
 
-use std::collections::HashMap;
 use std::str;
 
 use anyhow::Result;
@@ -13,64 +12,44 @@ use regex::Regex;
 
 #[derive(Debug, Default, Clone)]
 pub struct Info {
-    data: HashMap<String, String>,
+    pub commit: String,
+    pub git_describe_tags: String,
+    pub tag_latest: String,
+    pub distance: String,
+    pub tag_head: Option<String>,
+    pub dash_distance: String,
+    pub tag_latest_ltrimv: String,
+    pub tag_head_ltrimv: Option<String>,
 }
 
 impl Info {
-    fn insert(&mut self, k: &str, v: impl AsRef<str>) {
-        self.data.insert(k.to_string(), v.as_ref().to_string());
-    }
-
-    fn insert_regex(&mut self, re: &Regex, s0: impl AsRef<str>) -> bool {
-        let s = s0.as_ref();
-        if let Some(m) = re.captures(s) {
-            for name in re.capture_names().flatten() {
-                self.insert(name, m.name(name).unwrap().as_str());
-            }
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn get(&self, k: impl AsRef<str>) -> Option<&str> {
-        self.data.get(k.as_ref()).map(|s| s.as_str())
-    }
-
-    fn get_(&self, k: impl AsRef<str>) -> String {
-        self.data.get(k.as_ref()).unwrap().to_string()
-    }
-
     pub fn parse_describe(&mut self, s0: impl AsRef<str>) -> Result<()> {
         let s = s0.as_ref();
-        self.insert("git_describe_tags", s);
+        self.git_describe_tags = s.into();
         let re = Regex::new(r"^(?P<tag_latest>.*)-(?P<distance>\d+)-g[0-9a-f]+$")?;
-        let distance;
-        if self.insert_regex(&re, s) {
-            distance = self.get_("distance");
+        if let Some(m) = re.captures(s) {
+            self.tag_latest = m.name("tag_latest").unwrap().as_str().into();
+            self.distance = m.name("distance").unwrap().as_str().into();
         } else {
-            self.insert("tag_latest", s);
-            self.insert("distance", "0");
-            self.insert("tag_head", s);
-            distance = "0".to_string();
+            self.tag_latest = s.into();
+            self.distance = "0".into();
+            self.tag_head = Some(s.into());
         }
-        self.insert("dash_distance", format!("-{}", distance));
+        self.dash_distance = format!("-{}", self.distance);
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
-        self.insert(
-            "tag_latest_ltrimv",
-            re.replace(&self.get_("tag_latest"), "$tag_ltrimv"),
-        );
-        self.insert(
-            "tag_head_ltrimv",
-            re.replace(&self.get_("tag_latest"), "$tag_ltrimv"),
-        );
+        self.tag_latest_ltrimv = re.replace(&self.tag_latest, "$tag_ltrimv").into();
+        if let Some(ref tag_head) = self.tag_head {
+            self.tag_head_ltrimv = Some(re.replace(tag_head, "$tag_ltrimv").into());
+        }
         Ok(())
     }
 
     pub fn from_workspace() -> Result<Info> {
         let _ = git::unshallow();
-        let mut info = Info::default();
-        info.insert("commit", &git::head_commit()?);
+        let mut info = Info {
+            commit: git::head_commit()?,
+            ..Info::default()
+        };
         if let Ok(gitdescr) = git::describe() {
             info.parse_describe(gitdescr)?;
         }
@@ -79,10 +58,24 @@ impl Info {
 }
 
 impl<'a> IntoIterator for &'a Info {
-    type Item = (&'a String, &'a String);
-    type IntoIter = std::collections::hash_map::Iter<'a, String, String>;
+    type Item = (&'static str, &'a str);
+    type IntoIter = std::vec::IntoIter<(&'static str, &'a str)>;
     fn into_iter(self) -> Self::IntoIter {
-        self.data.iter()
+        let mut v = vec![
+            ("commit", self.commit.as_str()),
+            ("git_describe_tags", self.git_describe_tags.as_str()),
+            ("tag_latest", self.tag_latest.as_str()),
+            ("distance", self.distance.as_str()),
+            ("dash_distance", self.dash_distance.as_str()),
+            ("tag_latest_ltrimv", self.tag_latest_ltrimv.as_str()),
+        ];
+        if let Some(t) = &self.tag_head {
+            v.push(("tag_head", t.as_str()));
+        }
+        if let Some(t) = &self.tag_head_ltrimv {
+            v.push(("tag_head_ltrimv", t.as_str()));
+        }
+        v.into_iter()
     }
 }
 
