@@ -9,5 +9,5 @@ pub struct Args {}
 
 #[paw::main]
 fn main(_: Args) -> Result<()> {
-    githeadinfo::main()
+    ghaction_version_gen::main()
 }

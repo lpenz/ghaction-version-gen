@@ -10,8 +10,8 @@ use std::process::Command;
 use anyhow::ensure;
 use anyhow::Result;
 
-use ::githeadinfo::git;
-use ::githeadinfo::Info;
+use ::ghaction_version_gen::git;
+use ::ghaction_version_gen::Info;
 
 #[test]
 fn basic() -> Result<()> {
@@ -84,6 +84,6 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest_ltrimv, "7.5");
     assert_eq!(info.distance, "1");
     assert_eq!(info.commit, commit3.as_str());
-    githeadinfo::main()?;
+    ghaction_version_gen::main()?;
     Ok(())
 }

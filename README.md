@@ -1,9 +1,9 @@
-[![CI](https://github.com/lpenz/ghaction-githeadinfo/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/ghaction-githeadinfo/actions/workflows/ci.yml)
-[![coveralls](https://coveralls.io/repos/github/lpenz/ghaction-githeadinfo/badge.svg?branch=main)](https://coveralls.io/github/lpenz/ghaction-githeadinfo?branch=main)
+[![CI](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml)
+[![coveralls](https://coveralls.io/repos/github/lpenz/ghaction-version-gen/badge.svg?branch=main)](https://coveralls.io/github/lpenz/ghaction-version-gen?branch=main)
 
-# ghaction-githeadinfo
+# ghaction-version-gen
 
-ghaction-githeadinfo is a docker github action that outputs a version
+ghaction-version-gen is a docker github action that outputs a version
 number for you to use in a deploy action.
 
 There are many ways to generate version information for a
@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-githeadinfo:v0.2
+        uses: docker://lpenz/ghaction-version-gen:v0.2
       - name: deploy
         uses: <deploy action>
         if: steps.version.version_tagged != ''

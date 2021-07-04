@@ -16,5 +16,5 @@ RUN set -e -x; \
     apk update; \
     apk add --no-cache git; \
     rm -rf /var/cache/apk/*
-COPY --from=build /src/target/release/githeadinfo /usr/local/bin/
-CMD ["/usr/local/bin/githeadinfo"]
+COPY --from=build /src/target/release/ghaction-version-gen /usr/local/bin/
+CMD ["/usr/local/bin/ghaction-version-gen"]
