@@ -1,0 +1,27 @@
+---
+name: Version generator
+description: >
+  Github action that outputs various version options for you to choose
+  and use in a deploy action, with zero configuration
+branding:
+  icon: 'trending-up'
+  color: 'blue'
+outputs:
+  version_tagged:
+    description: >
+      For repositories that should only deploy on tags, it's defined
+      if the github event was a push of a tag.
+      
+      The output itself is the tag, with the optional `v` stripped.
+  version_commit:
+    description: >
+      For repositories that deploy on all commits to `master` or
+      `main`, it's defined if the github event was a push to one of
+      those.
+      
+      The output itself is the most recent tag on the branch, with the
+      optional `v` stripped, followed by the distance between the branch
+      and the tag.
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
