@@ -1,5 +1,6 @@
 [![CI](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml)
 [![coveralls](https://coveralls.io/repos/github/lpenz/ghaction-version-gen/badge.svg?branch=main)](https://coveralls.io/github/lpenz/ghaction-version-gen?branch=main)
+[![docker](https://img.shields.io/docker/v/lpenz/ghaction-version-gen?label=release&logo=docker&sort=semver)](https://hub.docker.com/repository/docker/lpenz/ghaction-version-gen)
 
 # ghaction-version-gen
 
