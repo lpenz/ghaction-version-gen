@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:v0.3
+        uses: docker://lpenz/ghaction-version-gen:0.3
       - name: deploy
         uses: <deploy action>
         if: steps.version.version_tagged != ''
