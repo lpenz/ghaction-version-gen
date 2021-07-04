@@ -54,25 +54,45 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.distance, "");
     // Check tag on HEAD
     run(&["git", "tag", "v1.0.0"])?;
-    let info = Info::from_workspace()?;
+    let mut info = Info::from_workspace()?;
+    info.is_push = Some(true);
+    info.is_tag = Some(true);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.commit, commit1.as_str());
+    assert_eq!(info.git_describe_tags, "v1.0.0");
     assert_eq!(info.tag_latest, "v1.0.0");
-    assert_eq!(info.tag_latest_ltrimv, "1.0.0");
-    assert_eq!(info.tag_head, Some("v1.0.0".to_string()));
-    assert_eq!(info.tag_head_ltrimv, Some("1.0.0".to_string()));
     assert_eq!(info.distance, "0");
     assert_eq!(info.dash_distance, "-0");
-    assert_eq!(info.commit, commit1.as_str());
+    assert_eq!(info.tag_distance, "v1.0.0-0");
+    assert_eq!(info.tag_head, Some("v1.0.0".to_string()));
+    assert_eq!(info.tag_latest_ltrimv, "1.0.0");
+    assert_eq!(info.tag_distance_ltrimv, "1.0.0-0");
+    assert_eq!(info.tag_head_ltrimv, Some("1.0.0".to_string()));
+    assert_eq!(info.version_tagged, Some("1.0.0".to_string()));
+    assert_eq!(info.version_commit, Some("1.0.0".to_string()));
     // Check tag behind HEAD
     file_write("bar.txt", "Hello again!")?;
     run(&["git", "add", "bar.txt"])?;
     run(&["git", "commit", "-m", "second commit"])?;
     let commit2 = git::head_commit()?;
-    let info = Info::from_workspace()?;
+    let mut info = Info::from_workspace()?;
+    info.is_push = Some(true);
+    info.is_tag = Some(false);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.commit, commit2.as_str());
+    assert_eq!(info.git_describe_tags, format!("v1.0.0-1-g{}", commit2));
     assert_eq!(info.tag_latest, "v1.0.0");
-    assert_eq!(info.tag_head, None);
     assert_eq!(info.distance, "1");
     assert_eq!(info.dash_distance, "-1");
-    assert_eq!(info.commit, commit2.as_str());
+    assert_eq!(info.tag_distance, "v1.0.0-1");
+    assert_eq!(info.tag_head, None);
+    assert_eq!(info.tag_latest_ltrimv, "1.0.0");
+    assert_eq!(info.tag_distance_ltrimv, "1.0.0-1");
+    assert_eq!(info.tag_head_ltrimv, None);
+    assert_eq!(info.version_tagged, None);
+    assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
     // Check new tag, on HEAD
     run(&["git", "tag", "7.5"])?;
     file_write("baz.txt", "Hello again again!")?;
@@ -80,10 +100,10 @@ fn gitrepo() -> Result<()> {
     run(&["git", "commit", "-m", "third commit"])?;
     let commit3 = git::head_commit()?;
     let info = Info::from_workspace()?;
+    assert_eq!(info.commit, commit3.as_str());
     assert_eq!(info.tag_latest, "7.5");
     assert_eq!(info.tag_latest_ltrimv, "7.5");
     assert_eq!(info.distance, "1");
-    assert_eq!(info.commit, commit3.as_str());
     ghaction_version_gen::main()?;
     Ok(())
 }

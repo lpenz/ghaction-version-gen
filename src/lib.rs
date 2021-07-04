@@ -42,14 +42,6 @@ impl Info {
                 self.is_main = Some(v == "refs/heads/main" || v == "refs/heads/master");
             }
         }
-        self.is_push_tag = match (self.is_push, self.is_tag) {
-            (Some(a), Some(b)) => Some(a && b),
-            _ => None,
-        };
-        self.is_push_main = match (self.is_push, self.is_main) {
-            (Some(a), Some(b)) => Some(a && b),
-            _ => None,
-        };
     }
 
     pub fn parse_describe(&mut self, s0: impl AsRef<str>) -> Result<()> {
@@ -64,6 +56,18 @@ impl Info {
             self.distance = "0".into();
             self.tag_head = Some(s.into());
         }
+        Ok(())
+    }
+
+    pub fn eval(&mut self) -> Result<()> {
+        self.is_push_tag = match (self.is_push, self.is_tag) {
+            (Some(a), Some(b)) => Some(a && b),
+            _ => None,
+        };
+        self.is_push_main = match (self.is_push, self.is_main) {
+            (Some(a), Some(b)) => Some(a && b),
+            _ => None,
+        };
         self.dash_distance = format!("-{}", self.distance);
         self.tag_distance = format!("{}{}", self.tag_latest, self.dash_distance);
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
@@ -76,7 +80,11 @@ impl Info {
             self.version_tagged = self.tag_head_ltrimv.clone();
         }
         if self.is_push_main == Some(true) {
-            self.version_commit = Some(self.tag_distance_ltrimv.clone());
+            if self.distance == "0" {
+                self.version_commit = Some(self.tag_latest_ltrimv.clone());
+            } else {
+                self.version_commit = Some(self.tag_distance_ltrimv.clone());
+            }
         }
         Ok(())
     }
@@ -91,6 +99,7 @@ impl Info {
         if let Ok(gitdescr) = git::describe() {
             info.parse_describe(gitdescr)?;
         }
+        info.eval()?;
         Ok(info)
     }
 }
