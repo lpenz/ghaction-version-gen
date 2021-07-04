@@ -1,3 +1,4 @@
+[![marketplace](https://img.shields.io/badge/marketplace-version--generator-blue?logo=github)](https://github.com/marketplace/actions/version-generator)
 [![CI](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/ghaction-version-gen/actions/workflows/ci.yml)
 [![coveralls](https://coveralls.io/repos/github/lpenz/ghaction-version-gen/badge.svg?branch=main)](https://coveralls.io/github/lpenz/ghaction-version-gen?branch=main)
 [![docker](https://img.shields.io/docker/v/lpenz/ghaction-version-gen?label=release&logo=docker&sort=semver)](https://hub.docker.com/repository/docker/lpenz/ghaction-version-gen)
@@ -47,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:v0.2
+        uses: docker://lpenz/ghaction-version-gen:v0.3
       - name: deploy
         uses: <deploy action>
         if: steps.version.version_tagged != ''
