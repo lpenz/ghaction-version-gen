@@ -51,9 +51,9 @@ jobs:
         uses: docker://lpenz/ghaction-version-gen:0.3
       - name: deploy
         uses: <deploy action>
-        if: steps.version.version_tagged != ''
+        if: steps.version.outputs.version_tagged != ''
         with:
-          version: ${{ steps.version.version_tagged }}
+          version: ${{ steps.version.outputs.version_tagged }}
 ```
 
 The same thing works for `version_commit`. Just keep in mind that, for
