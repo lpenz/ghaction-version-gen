@@ -42,7 +42,7 @@ The idea of this scheme is to allow the user to check if
 `version_tagged` or `version_commit` is not empty, and in this case
 use it as the version being deployed:
 
-```{yml}
+```yml
 jobs:
   deploy:
     runs-on: ubuntu-latest
