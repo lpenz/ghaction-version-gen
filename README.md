@@ -29,23 +29,19 @@ ones used for versioning:
 
   The output itself is the tag, with the optional `v` stripped.
 
-- `version_commit`: for repositories that deploy on all commits to
-  `master` or `main`, it's defined if the github event was a push to
-  one of those.
+- `version_commit`: for repositories that deploy on tags and on all
+  commits to `master` or `main`. It's defined if the github event was
+  a push of a tag or of one of those branches.
 
-  The output itself is the most recent tag on the branch, with the
-  optional `v` stripped, followed by the distance between the branch
-  and the tag.
+  The output itself is the the tag that was pushed, or the most recent
+  tag on the branch followed by the distance between the branch and
+  the tag (always with the `v` stripped).
 
 - `version_docker_ci`: for repositories that deploy to
   [hub.docker](http://hub.docker.com/) continuously. If the commit was
   pushed to `master` or `main`, the variable has the value *"latest"*;
   if a tag was pushed, it has the tag (`v` stripped).
 
-
-The idea of this scheme is to allow the user to check if
-one of the `version_*` variables is not empty, and in this case
-use it as the version being deployed:
 
 ```yml
 jobs:
@@ -92,6 +88,7 @@ or as alternative versioning schemes:
 - `tag_head_ltrimv`: `tag_head` without the optionsl leading `v`, if
   `tag_head` was defined.
 - `version_tagged`: `tag_head_ltrimv` if `is_push_tag`.
-- `version_commit`: `tag_distance_ltrimv` if `is_push_main`.
+- `version_commit`: `tag_head_ltrimv` if `is_push_tag` or
+  `tag_distance_ltrimv` if `is_push_main`.
 - `version_docker_ci`: *"latest"* if `is_push_main`, `tag_head_ltrimv`
   if `is_push_tag`.

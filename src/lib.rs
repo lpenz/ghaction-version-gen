@@ -79,15 +79,11 @@ impl Info {
         }
         if self.is_push_tag == Some(true) {
             self.version_tagged = self.tag_head_ltrimv.clone();
-        }
-        if self.is_push_main == Some(true) {
-            if self.distance == "0" {
-                self.version_commit = Some(self.tag_latest_ltrimv.clone());
-                self.version_docker_ci = Some(self.tag_latest_ltrimv.clone());
-            } else {
-                self.version_commit = Some(self.tag_distance_ltrimv.clone());
-                self.version_docker_ci = Some("latest".to_string());
-            }
+            self.version_commit = Some(self.tag_latest_ltrimv.clone());
+            self.version_docker_ci = Some(self.tag_latest_ltrimv.clone());
+        } else if self.is_push_main == Some(true) {
+            self.version_commit = Some(self.tag_distance_ltrimv.clone());
+            self.version_docker_ci = Some("latest".to_string());
         }
         Ok(())
     }
