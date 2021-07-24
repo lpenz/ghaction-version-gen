@@ -37,9 +37,14 @@ ones used for versioning:
   optional `v` stripped, followed by the distance between the branch
   and the tag.
 
+- `version_docker_ci`: for repositories that deploy to
+  [hub.docker](http://hub.docker.com/) continuously. If the commit was
+  pushed to `master` or `main`, the variable has the value *"latest"*;
+  if a tag was pushed, it has the tag (`v` stripped).
+
 
 The idea of this scheme is to allow the user to check if
-`version_tagged` or `version_commit` is not empty, and in this case
+one of the `version_*` variables is not empty, and in this case
 use it as the version being deployed:
 
 ```yml
@@ -88,3 +93,5 @@ or as alternative versioning schemes:
   `tag_head` was defined.
 - `version_tagged`: `tag_head_ltrimv` if `is_push_tag`.
 - `version_commit`: `tag_distance_ltrimv` if `is_push_main`.
+- `version_docker_ci`: *"latest"* if `is_push_main`, `tag_head_ltrimv`
+  if `is_push_tag`.

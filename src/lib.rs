@@ -29,6 +29,7 @@ pub struct Info {
     pub tag_head_ltrimv: Option<String>,
     pub version_tagged: Option<String>,
     pub version_commit: Option<String>,
+    pub version_docker_ci: Option<String>,
 }
 
 impl Info {
@@ -82,8 +83,10 @@ impl Info {
         if self.is_push_main == Some(true) {
             if self.distance == "0" {
                 self.version_commit = Some(self.tag_latest_ltrimv.clone());
+                self.version_docker_ci = Some(self.tag_latest_ltrimv.clone());
             } else {
                 self.version_commit = Some(self.tag_distance_ltrimv.clone());
+                self.version_docker_ci = Some("latest".to_string());
             }
         }
         Ok(())
@@ -144,6 +147,9 @@ impl<'a> IntoIterator for &'a Info {
         }
         if let Some(t) = &self.version_commit {
             vec.push(("version_commit", t.into()));
+        }
+        if let Some(t) = &self.version_docker_ci {
+            vec.push(("version_docker_ci", t.into()));
         }
         vec.into_iter()
     }

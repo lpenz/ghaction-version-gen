@@ -71,6 +71,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_head_ltrimv, Some("1.0.0".to_string()));
     assert_eq!(info.version_tagged, Some("1.0.0".to_string()));
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
+    assert_eq!(info.version_docker_ci, Some("1.0.0".to_string()));
     // Check tag behind HEAD
     file_write("bar.txt", "Hello again!")?;
     run(&["git", "add", "bar.txt"])?;
@@ -93,6 +94,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_head_ltrimv, None);
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
+    assert_eq!(info.version_docker_ci, Some("latest".to_string()));
     // Check new tag, on HEAD
     run(&["git", "tag", "7.5"])?;
     file_write("baz.txt", "Hello again again!")?;
