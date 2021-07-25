@@ -35,6 +35,15 @@ fn file_write(filename: &str, contents: &str) -> Result<()> {
     Ok(())
 }
 
+fn info_get() -> Result<Info> {
+    let mut info = Info::from_workspace()?;
+    info.is_push = None;
+    info.is_tag = None;
+    info.is_main = None;
+    info.eval()?;
+    Ok(info)
+}
+
 #[test]
 fn gitrepo() -> Result<()> {
     let tmpdir = tempfile::tempdir().unwrap();
@@ -47,7 +56,7 @@ fn gitrepo() -> Result<()> {
     run(&["git", "commit", "-m", "first commit"])?;
     // Check with no tag is present
     let commit1 = git::head_commit()?;
-    let info = Info::from_workspace()?;
+    let info = info_get()?;
     assert_eq!(info.commit, commit1.as_str());
     assert_eq!(info.tag_latest, "");
     assert_eq!(info.tag_head, None);
@@ -55,7 +64,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.version_docker_ci, "null");
     // Check tag on HEAD
     run(&["git", "tag", "v1.0.0"])?;
-    let mut info = Info::from_workspace()?;
+    let mut info = info_get()?;
     info.is_push = Some(true);
     info.is_tag = Some(true);
     info.is_main = Some(true);
@@ -78,7 +87,7 @@ fn gitrepo() -> Result<()> {
     run(&["git", "add", "bar.txt"])?;
     run(&["git", "commit", "-m", "second commit"])?;
     let commit2 = git::head_commit()?;
-    let mut info = Info::from_workspace()?;
+    let mut info = info_get()?;
     info.is_push = Some(true);
     info.is_tag = Some(false);
     info.is_main = Some(true);
@@ -102,7 +111,7 @@ fn gitrepo() -> Result<()> {
     run(&["git", "add", "baz.txt"])?;
     run(&["git", "commit", "-m", "third commit"])?;
     let commit3 = git::head_commit()?;
-    let info = Info::from_workspace()?;
+    let info = info_get()?;
     assert_eq!(info.commit, commit3.as_str());
     assert_eq!(info.tag_latest, "7.5");
     assert_eq!(info.tag_latest_ltrimv, "7.5");
