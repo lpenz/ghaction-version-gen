@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.3
+        uses: docker://lpenz/ghaction-version-gen:0.6
       - name: deploy
         uses: <deploy action>
         if: steps.version.outputs.version_tagged != ''
@@ -92,3 +92,4 @@ or as alternative versioning schemes:
   `tag_distance_ltrimv` if `is_push_main`.
 - `version_docker_ci`: *"latest"* if `is_push_main`, `tag_head_ltrimv`
   if `is_push_tag`.
+
