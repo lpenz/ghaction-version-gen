@@ -40,27 +40,13 @@ ones used for versioning:
 - `version_docker_ci`: for repositories that deploy to
   [hub.docker](http://hub.docker.com/) continuously. If the commit was
   pushed to `master` or `main`, the variable has the value *"latest"*;
-  if a tag was pushed, it has the tag (`v` stripped).
+  if a tag was pushed, it has the tag (`v` stripped); otherwise, it has
+  the value *"null"* as a string. This last case allows us to always
+  use the variable as the version for the [build-push-action], which
+  doesn't like empty strings.
 
 
-```yml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.6
-      - name: deploy
-        uses: <deploy action>
-        if: steps.version.outputs.version_tagged != ''
-        with:
-          version: ${{ steps.version.outputs.version_tagged }}
-```
-
-The same thing works for `version_commit`. Just keep in mind that, for
-it to work on a tagged commit, you may have to push the tag before the
-commit, which is counter-intuitive.
+You can these variables in action in the [Examples](#examples) section.
 
 
 ### Secondary outputs
@@ -92,4 +78,74 @@ or as alternative versioning schemes:
   `tag_distance_ltrimv` if `is_push_main`.
 - `version_docker_ci`: *"latest"* if `is_push_main`, `tag_head_ltrimv`
   if `is_push_tag`.
+
+
+## Examples
+
+### `version_tagged` and `version_commit`
+
+Using `version_tagged` and `version_commit` is quite simple:
+
+```yml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: version
+        uses: docker://lpenz/ghaction-version-gen:0.6
+      ...
+      - name: deploy
+        uses: <deploy action>
+        if: steps.version.outputs.version_tagged != ''
+        with:
+          version: ${{ steps.version.outputs.version_tagged }}
+```
+
+That gets the *deploy* step to run only when a tag is pushed, and sets
+`version` to the tag with the optional `v` prefix stripped.
+
+If we replace `version_tagged` with `version_commit` in the example
+above, we get an additional behavior: `version_commit` is also defined
+when `main` or `master` are pushed, and it assumes the value of the
+last tag (`v` stripped) suffixed with `-` and the distance of the
+pushed commit to that tag. This should be used in projects that want
+to deploy every time `main` is pushed.
+
+
+### `version_docker_ci`
+
+The `version_docker_ci` variable was designed to work with the
+docker's [build-push-action].  It should be used in projects where we
+would use want to deploy from tags and from `main`/`master`, but we
+want `main`/`master` to be identified as `latest` in docker hub.
+
+This is how it's used:
+
+```yml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: version
+        uses: docker://lpenz/ghaction-version-gen:0.6
+      - uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v2
+        with:
+          push: ${{ steps.version.outputs.version_docker_ci != 'null' }}
+          tags: ${{ github.repository }}:${{ steps.version.outputs.version_docker_ci }}
+```
+
+Note that we don't make the [build-push-action] step conditional
+because we always want to build the container. Instead, we make `push`
+conditional, by checking that `version_docker_ci` is not `null`. We
+use `null` instead of the empty string as a workaround, because the
+action doesn't let us use an empty string as the version in `tags`.
+
+
+[build-push-action]: https://github.com/marketplace/actions/build-and-push-docker-images
 
