@@ -52,6 +52,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest, "");
     assert_eq!(info.tag_head, None);
     assert_eq!(info.distance, "");
+    assert_eq!(info.version_docker_ci, "null");
     // Check tag on HEAD
     run(&["git", "tag", "v1.0.0"])?;
     let mut info = Info::from_workspace()?;
@@ -71,7 +72,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_head_ltrimv, Some("1.0.0".to_string()));
     assert_eq!(info.version_tagged, Some("1.0.0".to_string()));
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
-    assert_eq!(info.version_docker_ci, Some("1.0.0".to_string()));
+    assert_eq!(info.version_docker_ci, "1.0.0");
     // Check tag behind HEAD
     file_write("bar.txt", "Hello again!")?;
     run(&["git", "add", "bar.txt"])?;
@@ -94,7 +95,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_head_ltrimv, None);
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
-    assert_eq!(info.version_docker_ci, Some("latest".to_string()));
+    assert_eq!(info.version_docker_ci, "latest");
     // Check new tag, on HEAD
     run(&["git", "tag", "7.5"])?;
     file_write("baz.txt", "Hello again again!")?;
@@ -106,6 +107,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest, "7.5");
     assert_eq!(info.tag_latest_ltrimv, "7.5");
     assert_eq!(info.distance, "1");
+    assert_eq!(info.version_docker_ci, "null");
     ghaction_version_gen::main()?;
     Ok(())
 }

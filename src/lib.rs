@@ -29,7 +29,7 @@ pub struct Info {
     pub tag_head_ltrimv: Option<String>,
     pub version_tagged: Option<String>,
     pub version_commit: Option<String>,
-    pub version_docker_ci: Option<String>,
+    pub version_docker_ci: String,
 }
 
 impl Info {
@@ -80,10 +80,12 @@ impl Info {
         if self.is_push_tag == Some(true) {
             self.version_tagged = self.tag_head_ltrimv.clone();
             self.version_commit = Some(self.tag_latest_ltrimv.clone());
-            self.version_docker_ci = Some(self.tag_latest_ltrimv.clone());
+            self.version_docker_ci = self.tag_latest_ltrimv.clone();
         } else if self.is_push_main == Some(true) {
             self.version_commit = Some(self.tag_distance_ltrimv.clone());
-            self.version_docker_ci = Some("latest".to_string());
+            self.version_docker_ci = "latest".to_string();
+        } else {
+            self.version_docker_ci = "null".to_string();
         }
         Ok(())
     }
@@ -116,6 +118,7 @@ impl<'a> IntoIterator for &'a Info {
             ("tag_distance", self.dash_distance.clone()),
             ("tag_latest_ltrimv", self.tag_latest_ltrimv.clone()),
             ("tag_distance_ltrimv", self.tag_latest_ltrimv.clone()),
+            ("version_docker_ci", self.version_docker_ci.clone()),
         ];
         if let Some(v) = &self.is_push {
             vec.push(("is_push", format!("{}", v)));
@@ -143,9 +146,6 @@ impl<'a> IntoIterator for &'a Info {
         }
         if let Some(t) = &self.version_commit {
             vec.push(("version_commit", t.into()));
-        }
-        if let Some(t) = &self.version_docker_ci {
-            vec.push(("version_docker_ci", t.into()));
         }
         vec.into_iter()
     }
