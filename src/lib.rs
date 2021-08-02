@@ -105,47 +105,55 @@ impl Info {
     }
 }
 
+pub fn bool2str(b: bool) -> &'static str {
+    if b {
+        "true"
+    } else {
+        "false"
+    }
+}
+
 impl<'a> IntoIterator for &'a Info {
-    type Item = (&'static str, String);
-    type IntoIter = std::vec::IntoIter<(&'static str, String)>;
+    type Item = (&'static str, &'a str);
+    type IntoIter = std::vec::IntoIter<(&'static str, &'a str)>;
     fn into_iter(self) -> Self::IntoIter {
-        let mut vec: Vec<(&'static str, String)> = vec![
-            ("commit", self.commit.clone()),
-            ("git_describe_tags", self.git_describe_tags.clone()),
-            ("tag_latest", self.tag_latest.clone()),
-            ("distance", self.distance.clone()),
-            ("dash_distance", self.dash_distance.clone()),
-            ("tag_distance", self.dash_distance.clone()),
-            ("tag_latest_ltrimv", self.tag_latest_ltrimv.clone()),
-            ("tag_distance_ltrimv", self.tag_latest_ltrimv.clone()),
-            ("version_docker_ci", self.version_docker_ci.clone()),
+        let mut vec: Vec<(&'static str, &'a str)> = vec![
+            ("commit", &self.commit),
+            ("git_describe_tags", &self.git_describe_tags),
+            ("tag_latest", &self.tag_latest),
+            ("distance", &self.distance),
+            ("dash_distance", &self.dash_distance),
+            ("tag_distance", &self.dash_distance),
+            ("tag_latest_ltrimv", &self.tag_latest_ltrimv),
+            ("tag_distance_ltrimv", &self.tag_latest_ltrimv),
+            ("version_docker_ci", &self.version_docker_ci),
         ];
-        if let Some(v) = &self.is_push {
-            vec.push(("is_push", format!("{}", v)));
+        if let Some(ref v) = self.is_push {
+            vec.push(("is_push", bool2str(*v)));
         }
-        if let Some(v) = &self.is_tag {
-            vec.push(("is_tag", format!("{}", v)));
+        if let Some(ref v) = self.is_tag {
+            vec.push(("is_tag", bool2str(*v)));
         }
-        if let Some(v) = &self.is_main {
-            vec.push(("is_main", format!("{}", v)));
+        if let Some(ref v) = self.is_main {
+            vec.push(("is_main", bool2str(*v)));
         }
-        if let Some(v) = &self.is_push_tag {
-            vec.push(("is_push_tag", format!("{}", v)));
+        if let Some(ref v) = self.is_push_tag {
+            vec.push(("is_push_tag", bool2str(*v)));
         }
-        if let Some(v) = &self.is_push_main {
-            vec.push(("is_push_main", format!("{}", v)));
+        if let Some(ref v) = self.is_push_main {
+            vec.push(("is_push_main", bool2str(*v)));
         }
-        if let Some(t) = &self.tag_head {
-            vec.push(("tag_head", t.into()));
+        if let Some(ref t) = self.tag_head {
+            vec.push(("tag_head", t));
         }
-        if let Some(t) = &self.tag_head_ltrimv {
-            vec.push(("tag_head_ltrimv", t.into()));
+        if let Some(ref t) = self.tag_head_ltrimv {
+            vec.push(("tag_head_ltrimv", t));
         }
-        if let Some(t) = &self.version_tagged {
-            vec.push(("version_tagged", t.into()));
+        if let Some(ref t) = self.version_tagged {
+            vec.push(("version_tagged", t));
         }
-        if let Some(t) = &self.version_commit {
-            vec.push(("version_commit", t.into()));
+        if let Some(ref t) = self.version_commit {
+            vec.push(("version_commit", t));
         }
         vec.into_iter()
     }
