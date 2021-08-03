@@ -3,9 +3,11 @@
 // file 'LICENSE', which is part of this source code package.
 
 pub mod git;
+pub mod rust;
 
 use std::str;
 
+use anyhow::bail;
 use anyhow::Result;
 
 use regex::Regex;
@@ -27,6 +29,8 @@ pub struct Info {
     pub tag_latest_ltrimv: String,
     pub tag_distance_ltrimv: String,
     pub tag_head_ltrimv: Option<String>,
+    pub rust_crate_version: Option<String>,
+    pub version_mismatch: Option<String>,
     pub version_tagged: Option<String>,
     pub version_commit: Option<String>,
     pub version_docker_ci: String,
@@ -45,6 +49,13 @@ impl Info {
         }
     }
 
+    pub fn parse_files(&mut self) -> Result<()> {
+        if let Some(version) = rust::crate_version()? {
+            self.rust_crate_version = Some(version);
+        }
+        Ok(())
+    }
+
     pub fn parse_describe(&mut self, s0: impl AsRef<str>) -> Result<()> {
         let s = s0.as_ref();
         self.git_describe_tags = s.into();
@@ -61,6 +72,7 @@ impl Info {
     }
 
     pub fn eval(&mut self) -> Result<()> {
+        // Evaluate trivial parameters:
         self.is_push_tag = match (self.is_push, self.is_tag) {
             (Some(a), Some(b)) => Some(a && b),
             _ => None,
@@ -77,6 +89,7 @@ impl Info {
         if let Some(ref tag_head) = self.tag_head {
             self.tag_head_ltrimv = Some(re.replace(tag_head, "$tag_ltrimv").into());
         }
+        // Evaluate version outputs, correlating the previous variables
         if self.is_push_tag == Some(true) {
             self.version_tagged = self.tag_head_ltrimv.clone();
             self.version_commit = Some(self.tag_latest_ltrimv.clone());
@@ -86,6 +99,16 @@ impl Info {
             self.version_docker_ci = "latest".to_string();
         } else {
             self.version_docker_ci = "null".to_string();
+        }
+        if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
+            if let Some(ref version) = self.rust_crate_version {
+                if version != &self.tag_latest_ltrimv {
+                    self.version_mismatch = Some(format!(
+                        "file=Cargo.toml::Version mismatch: tag {} != {} from Cargo.toml",
+                        self.tag_latest_ltrimv, version
+                    ));
+                }
+            }
         }
         Ok(())
     }
@@ -97,6 +120,7 @@ impl Info {
             ..Info::default()
         };
         info.parse_env(std::env::vars());
+        info.parse_files()?;
         if let Ok(gitdescr) = git::describe() {
             info.parse_describe(gitdescr)?;
         }
@@ -149,6 +173,12 @@ impl<'a> IntoIterator for &'a Info {
         if let Some(ref t) = self.tag_head_ltrimv {
             vec.push(("tag_head_ltrimv", t));
         }
+        if let Some(ref t) = self.rust_crate_version {
+            vec.push(("rust_crate_version", t));
+        }
+        if let Some(ref t) = self.version_mismatch {
+            vec.push(("version_mismatch", t));
+        }
         if let Some(ref t) = self.version_tagged {
             vec.push(("version_tagged", t));
         }
@@ -164,6 +194,14 @@ pub fn main() -> Result<()> {
     for (k, v) in &info {
         println!("Setting {}={}", k, v);
         println!("::set-output name={}::{}", k, v);
+    }
+    if let Some(ref message) = info.version_mismatch {
+        if info.is_push_tag == Some(true) {
+            println!("::error {}", message);
+            bail!("Version mismatch while pushing tag");
+        } else {
+            println!("::warning {}", message);
+        }
     }
     Ok(())
 }

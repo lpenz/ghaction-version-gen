@@ -3,17 +3,21 @@
 // file 'LICENSE', which is part of this source code package.
 
 use std::env;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 
 use anyhow::ensure;
 use anyhow::Result;
+use serial_test::serial;
 
 use ::ghaction_version_gen::git;
+use ::ghaction_version_gen::rust;
 use ::ghaction_version_gen::Info;
 
 #[test]
+#[serial]
 fn basic() -> Result<()> {
     let gitdesc = "1.3.1-20-gc5f7a99";
     let mut info = Info::default();
@@ -45,6 +49,7 @@ fn info_get() -> Result<Info> {
 }
 
 #[test]
+#[serial]
 fn gitrepo() -> Result<()> {
     let tmpdir = tempfile::tempdir().unwrap();
     env::set_current_dir(&tmpdir).unwrap();
@@ -91,6 +96,8 @@ fn gitrepo() -> Result<()> {
     info.is_push = Some(true);
     info.is_tag = Some(false);
     info.is_main = Some(true);
+    file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    info.parse_files()?;
     info.eval()?;
     assert_eq!(info.commit, commit2.as_str());
     assert_eq!(info.git_describe_tags, format!("v1.0.0-1-g{}", commit2));
@@ -105,6 +112,12 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
     assert_eq!(info.version_docker_ci, "latest");
+    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
+    assert_eq!(
+        info.version_mismatch,
+        Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
+    );
+    fs::remove_file("Cargo.toml")?;
     // Check new tag, on HEAD
     run(&["git", "tag", "7.5"])?;
     file_write("baz.txt", "Hello again again!")?;
@@ -118,5 +131,20 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.distance, "1");
     assert_eq!(info.version_docker_ci, "null");
     ghaction_version_gen::main()?;
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn toml1() -> Result<()> {
+    let tmpdir = tempfile::tempdir()?;
+    env::set_current_dir(&tmpdir)?;
+    assert_eq!(rust::crate_version()?, None);
+    file_write("Cargo.toml", "")?;
+    assert!(rust::crate_version().is_err());
+    file_write("Cargo.toml", "[package]\n")?;
+    assert!(rust::crate_version().is_err());
+    file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
+    assert_eq!(rust::crate_version()?, Some("1.0".to_string()));
     Ok(())
 }

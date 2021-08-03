@@ -48,6 +48,11 @@ ones used for versioning:
 
 You can these variables in action in the [Examples](#examples) section.
 
+This github action is also able to check if a project-specific version
+matches with the latest tags. At the moment, only rust's *Cargo.toml*
+file is checked. If there's a mismatch and a new tag is being pushed,
+the action fails.
+
 
 ### Secondary outputs
 
@@ -73,11 +78,15 @@ or as alternative versioning schemes:
 - `tag_latest_ltrimv`: `tag_latest` without the optional leading `v`.
 - `tag_head_ltrimv`: `tag_head` without the optionsl leading `v`, if
   `tag_head` was defined.
+- `rust_crate_version`: the version in *Cargo.toml* if it exists.
 - `version_tagged`: `tag_head_ltrimv` if `is_push_tag`.
 - `version_commit`: `tag_head_ltrimv` if `is_push_tag` or
   `tag_distance_ltrimv` if `is_push_main`.
 - `version_docker_ci`: *"latest"* if `is_push_main`, `tag_head_ltrimv`
   if `is_push_tag`.
+- `version_mismatch`: if there's a version mismatch between the
+  contents of a file and the latest tag, this is the error
+  message. This also appears as a github action "error".
 
 
 ## Examples
