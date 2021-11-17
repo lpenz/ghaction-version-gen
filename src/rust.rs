@@ -4,13 +4,15 @@
 
 use std::fs;
 use std::io::ErrorKind;
+use std::path::Path;
 
 use anyhow::anyhow;
 use anyhow::Result;
 use toml::Value;
 
-pub fn crate_version() -> Result<Option<String>> {
-    let result = fs::read_to_string("Cargo.toml");
+pub fn crate_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
+    let cargofile = repo.as_ref().join("Cargo.toml");
+    let result = fs::read_to_string(cargofile);
     if let Err(e) = result {
         return if e.kind() == ErrorKind::NotFound {
             Ok(None)

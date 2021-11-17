@@ -5,6 +5,8 @@
 pub mod git;
 pub mod rust;
 
+use std::env;
+use std::path::Path;
 use std::str;
 
 use anyhow::bail;
@@ -49,8 +51,8 @@ impl Info {
         }
     }
 
-    pub fn parse_files(&mut self) -> Result<()> {
-        if let Some(version) = rust::crate_version()? {
+    pub fn parse_files<P: AsRef<Path>>(&mut self, repo: P) -> Result<()> {
+        if let Some(version) = rust::crate_version(repo)? {
             self.rust_crate_version = Some(version);
         }
         Ok(())
@@ -113,15 +115,15 @@ impl Info {
         Ok(())
     }
 
-    pub fn from_workspace() -> Result<Info> {
-        let _ = git::unshallow();
+    pub fn from_workspace<P: AsRef<Path>>(repo: P) -> Result<Info> {
+        let _ = git::unshallow(&repo);
         let mut info = Info {
-            commit: git::head_commit()?,
+            commit: git::head_commit(&repo)?,
             ..Info::default()
         };
         info.parse_env(std::env::vars());
-        info.parse_files()?;
-        if let Ok(gitdescr) = git::describe() {
+        info.parse_files(&repo)?;
+        if let Ok(gitdescr) = git::describe(&repo) {
             info.parse_describe(gitdescr)?;
         }
         info.eval()?;
@@ -190,7 +192,7 @@ impl<'a> IntoIterator for &'a Info {
 }
 
 pub fn main() -> Result<()> {
-    let info = Info::from_workspace()?;
+    let info = Info::from_workspace(env::current_dir()?)?;
     for (k, v) in &info {
         println!("Setting {}={}", k, v);
         println!("::set-output name={}::{}", k, v);

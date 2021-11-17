@@ -2,22 +2,18 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-use std::env;
-use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 
 use anyhow::ensure;
 use anyhow::Result;
-use serial_test::serial;
 
-use ::ghaction_version_gen::git;
-use ::ghaction_version_gen::rust;
-use ::ghaction_version_gen::Info;
+use ghaction_version_gen::git;
+use ghaction_version_gen::rust;
+use ghaction_version_gen::Info;
 
 #[test]
-#[serial]
 fn basic() -> Result<()> {
     let gitdesc = "1.3.1-20-gc5f7a99";
     let mut info = Info::default();
@@ -27,49 +23,64 @@ fn basic() -> Result<()> {
     Ok(())
 }
 
-fn run(cmd: &[&str]) -> Result<()> {
-    let status = Command::new(cmd[0]).args(&cmd[1..]).status()?;
-    ensure!(status.success(), "error running command");
-    Ok(())
+struct TmpGit {
+    pub repo: tempfile::TempDir,
 }
 
-fn file_write(filename: &str, contents: &str) -> Result<()> {
-    let mut fd = File::create(filename)?;
-    fd.write_all(contents.as_bytes())?;
-    Ok(())
-}
+impl TmpGit {
+    pub fn new() -> Result<TmpGit> {
+        let tmpgit = TmpGit {
+            repo: tempfile::tempdir()?,
+        };
+        tmpgit.run(&["git", "init"])?;
+        tmpgit.run(&["git", "config", "--local", "user.name", "username"])?;
+        tmpgit.run(&["git", "config", "--local", "user.email", "user@email.net"])?;
+        Ok(tmpgit)
+    }
 
-fn info_get() -> Result<Info> {
-    let mut info = Info::from_workspace()?;
-    info.is_push = None;
-    info.is_tag = None;
-    info.is_main = None;
-    info.eval()?;
-    Ok(info)
+    pub fn run(&self, cmd: &[&str]) -> Result<()> {
+        let status = Command::new(cmd[0])
+            .current_dir(&self.repo)
+            .args(&cmd[1..])
+            .status()?;
+        ensure!(status.success(), "error running command");
+        Ok(())
+    }
+
+    pub fn file_write(&self, basename: &str, contents: &str) -> Result<()> {
+        let path = self.repo.path().join(basename);
+        let mut fd = File::create(path)?;
+        fd.write_all(contents.as_bytes())?;
+        Ok(())
+    }
+
+    fn info_get(&self) -> Result<Info> {
+        let mut info = Info::from_workspace(&self.repo)?;
+        info.is_push = None;
+        info.is_tag = None;
+        info.is_main = None;
+        info.eval()?;
+        Ok(info)
+    }
 }
 
 #[test]
-#[serial]
 fn gitrepo() -> Result<()> {
-    let tmpdir = tempfile::tempdir().unwrap();
-    env::set_current_dir(&tmpdir).unwrap();
-    run(&["git", "init"])?;
-    run(&["git", "config", "user.name", "username"])?;
-    run(&["git", "config", "user.email", "user@email.net"])?;
-    file_write("foo.txt", "Hello, world!")?;
-    run(&["git", "add", "foo.txt"])?;
-    run(&["git", "commit", "-m", "first commit"])?;
+    let repo = TmpGit::new()?;
+    repo.file_write("foo.txt", "Hello, world!")?;
+    repo.run(&["git", "add", "foo.txt"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
     // Check with no tag is present
-    let commit1 = git::head_commit()?;
-    let info = info_get()?;
+    let commit1 = git::head_commit(&repo.repo)?;
+    let info = repo.info_get()?;
     assert_eq!(info.commit, commit1.as_str());
     assert_eq!(info.tag_latest, "");
     assert_eq!(info.tag_head, None);
     assert_eq!(info.distance, "");
     assert_eq!(info.version_docker_ci, "null");
     // Check tag on HEAD
-    run(&["git", "tag", "v1.0.0"])?;
-    let mut info = info_get()?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    let mut info = repo.info_get()?;
     info.is_push = Some(true);
     info.is_tag = Some(true);
     info.is_main = Some(true);
@@ -88,16 +99,16 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
     assert_eq!(info.version_docker_ci, "1.0.0");
     // Check tag behind HEAD
-    file_write("bar.txt", "Hello again!")?;
-    run(&["git", "add", "bar.txt"])?;
-    run(&["git", "commit", "-m", "second commit"])?;
-    let commit2 = git::head_commit()?;
-    let mut info = info_get()?;
+    repo.file_write("bar.txt", "Hello again!")?;
+    repo.run(&["git", "add", "bar.txt"])?;
+    repo.run(&["git", "commit", "-m", "second commit"])?;
+    let commit2 = git::head_commit(&repo.repo)?;
+    let mut info = repo.info_get()?;
     info.is_push = Some(true);
     info.is_tag = Some(false);
     info.is_main = Some(true);
-    file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
-    info.parse_files()?;
+    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    info.parse_files(&repo.repo)?;
     info.eval()?;
     assert_eq!(info.commit, commit2.as_str());
     assert_eq!(info.git_describe_tags, format!("v1.0.0-1-g{}", commit2));
@@ -117,14 +128,13 @@ fn gitrepo() -> Result<()> {
         info.version_mismatch,
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
-    fs::remove_file("Cargo.toml")?;
     // Check new tag, on HEAD
-    run(&["git", "tag", "7.5"])?;
-    file_write("baz.txt", "Hello again again!")?;
-    run(&["git", "add", "baz.txt"])?;
-    run(&["git", "commit", "-m", "third commit"])?;
-    let commit3 = git::head_commit()?;
-    let info = info_get()?;
+    repo.run(&["git", "tag", "7.5"])?;
+    repo.file_write("baz.txt", "Hello again again!")?;
+    repo.run(&["git", "add", "baz.txt"])?;
+    repo.run(&["git", "commit", "-m", "third commit"])?;
+    let commit3 = git::head_commit(&repo.repo)?;
+    let info = repo.info_get()?;
     assert_eq!(info.commit, commit3.as_str());
     assert_eq!(info.tag_latest, "7.5");
     assert_eq!(info.tag_latest_ltrimv, "7.5");
@@ -135,16 +145,14 @@ fn gitrepo() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn toml1() -> Result<()> {
-    let tmpdir = tempfile::tempdir()?;
-    env::set_current_dir(&tmpdir)?;
-    assert_eq!(rust::crate_version()?, None);
-    file_write("Cargo.toml", "")?;
-    assert!(rust::crate_version().is_err());
-    file_write("Cargo.toml", "[package]\n")?;
-    assert!(rust::crate_version().is_err());
-    file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
-    assert_eq!(rust::crate_version()?, Some("1.0".to_string()));
+    let repo = TmpGit::new()?;
+    assert_eq!(rust::crate_version(&repo.repo)?, None);
+    repo.file_write("Cargo.toml", "")?;
+    assert!(rust::crate_version(&repo.repo).is_err());
+    repo.file_write("Cargo.toml", "[package]\n")?;
+    assert!(rust::crate_version(&repo.repo).is_err());
+    repo.file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
+    assert_eq!(rust::crate_version(&repo.repo)?, Some("1.0".to_string()));
     Ok(())
 }
