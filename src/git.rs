@@ -9,9 +9,14 @@ use anyhow::ensure;
 use anyhow::Result;
 
 pub fn run<P: AsRef<Path>>(repo: P, args: &[&str]) -> Result<String> {
-    let output = Command::new("git").current_dir(repo).args(args).output()?;
-    ensure!(output.status.success(), "error running git {:?}", args);
-    String::from_utf8(output.stdout)
+    let result = Command::new("git").current_dir(repo).args(args).output()?;
+    ensure!(
+        result.status.success(),
+        "error running git {:?}: {:?}",
+        args,
+        result,
+    );
+    String::from_utf8(result.stdout)
         .map(|s| s.trim().to_string())
         .map_err(anyhow::Error::msg)
 }
