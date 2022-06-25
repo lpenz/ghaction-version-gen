@@ -4,6 +4,7 @@
 
 use std::fs::File;
 use std::io::Write;
+use std::iter;
 use std::process::Command;
 
 use anyhow::ensure;
@@ -35,6 +36,7 @@ impl TmpGit {
         tmpgit.run(&["git", "init"])?;
         tmpgit.run(&["git", "config", "--local", "user.name", "username"])?;
         tmpgit.run(&["git", "config", "--local", "user.email", "user@email.net"])?;
+        tmpgit.run(&["git", "config", "--local", "commit.gpgsign", "false"])?;
         Ok(tmpgit)
     }
 
@@ -55,7 +57,7 @@ impl TmpGit {
     }
 
     fn info_get(&self) -> Result<Info> {
-        let mut info = Info::from_workspace(&self.repo)?;
+        let mut info = Info::from_workspace(&self.repo, iter::empty())?;
         info.is_push = None;
         info.is_tag = None;
         info.is_main = None;
@@ -128,6 +130,24 @@ fn gitrepo() -> Result<()> {
         info.version_mismatch,
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
+    // Check overrides
+    info.parse_env(
+        vec![
+            ("OVERRIDE_VERSION_TAGGED", "a"),
+            ("OVERRIDE_VERSION_COMMIT", "b"),
+            ("OVERRIDE_VERSION_DOCKER_CI", "c"),
+        ]
+        .into_iter()
+        .map(|(a, b)| (String::from(a), String::from(b))),
+    );
+    info.is_tag = Some(true);
+    info.eval()?;
+    assert_eq!(info.override_version_tagged, Some(String::from("a")));
+    assert_eq!(info.override_version_commit, Some(String::from("b")));
+    assert_eq!(info.override_version_docker_ci, Some(String::from("c")));
+    assert_eq!(info.version_tagged, Some(String::from("a")));
+    assert_eq!(info.version_commit, Some(String::from("b")));
+    assert_eq!(info.version_docker_ci, String::from("c"));
     // Check new tag, on HEAD
     repo.run(&["git", "tag", "7.5"])?;
     repo.file_write("baz.txt", "Hello again again!")?;

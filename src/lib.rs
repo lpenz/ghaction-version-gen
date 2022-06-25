@@ -36,17 +36,32 @@ pub struct Info {
     pub version_tagged: Option<String>,
     pub version_commit: Option<String>,
     pub version_docker_ci: String,
+    pub override_version_tagged: Option<String>,
+    pub override_version_commit: Option<String>,
+    pub override_version_docker_ci: Option<String>,
 }
 
 impl Info {
     pub fn parse_env(&mut self, enviter: impl Iterator<Item = (String, String)>) {
         for (k, v) in enviter {
-            if k == "GITHUB_EVENT_NAME" {
-                self.is_push = Some(v == "push");
-            }
-            if k == "GITHUB_REF" {
-                self.is_tag = Some(v.starts_with("refs/tags/"));
-                self.is_main = Some(v == "refs/heads/main" || v == "refs/heads/master");
+            match k.as_str() {
+                "GITHUB_EVENT_NAME" => {
+                    self.is_push = Some(v == "push");
+                }
+                "GITHUB_REF" => {
+                    self.is_tag = Some(v.starts_with("refs/tags/"));
+                    self.is_main = Some(v == "refs/heads/main" || v == "refs/heads/master");
+                }
+                "OVERRIDE_VERSION_TAGGED" => {
+                    self.override_version_tagged = Some(v);
+                }
+                "OVERRIDE_VERSION_COMMIT" => {
+                    self.override_version_commit = Some(v);
+                }
+                "OVERRIDE_VERSION_DOCKER_CI" => {
+                    self.override_version_docker_ci = Some(v);
+                }
+                _ => {}
             }
         }
     }
@@ -93,14 +108,38 @@ impl Info {
         }
         // Evaluate version outputs, correlating the previous variables
         if self.is_push_tag == Some(true) {
-            self.version_tagged = self.tag_head_ltrimv.clone();
-            self.version_commit = Some(self.tag_latest_ltrimv.clone());
-            self.version_docker_ci = self.tag_latest_ltrimv.clone();
+            self.version_tagged = self
+                .override_version_tagged
+                .as_ref()
+                .or(self.tag_head_ltrimv.as_ref())
+                .cloned();
+            self.version_commit = self
+                .override_version_commit
+                .as_ref()
+                .or(Some(&self.tag_latest_ltrimv))
+                .cloned();
+            self.version_docker_ci = self
+                .override_version_docker_ci
+                .as_ref()
+                .unwrap_or(&self.tag_latest_ltrimv)
+                .clone();
         } else if self.is_push_main == Some(true) {
-            self.version_commit = Some(self.tag_distance_ltrimv.clone());
-            self.version_docker_ci = "latest".to_string();
+            self.version_commit = self
+                .override_version_commit
+                .as_ref()
+                .or(Some(&self.tag_distance_ltrimv))
+                .cloned();
+            self.version_docker_ci = self
+                .override_version_docker_ci
+                .as_ref()
+                .unwrap_or(&String::from("latest"))
+                .clone();
         } else {
-            self.version_docker_ci = "null".to_string();
+            self.version_docker_ci = self
+                .override_version_docker_ci
+                .as_ref()
+                .unwrap_or(&String::from("null"))
+                .clone();
         }
         if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
             if let Some(ref version) = self.rust_crate_version {
@@ -115,13 +154,16 @@ impl Info {
         Ok(())
     }
 
-    pub fn from_workspace<P: AsRef<Path>>(repo: P) -> Result<Info> {
+    pub fn from_workspace<P: AsRef<Path>>(
+        repo: P,
+        enviter: impl Iterator<Item = (String, String)>,
+    ) -> Result<Info> {
         let _ = git::unshallow(&repo);
         let mut info = Info {
             commit: git::head_commit(&repo)?,
             ..Info::default()
         };
-        info.parse_env(std::env::vars());
+        info.parse_env(enviter);
         info.parse_files(&repo)?;
         if let Ok(gitdescr) = git::describe(&repo) {
             info.parse_describe(gitdescr)?;
@@ -187,12 +229,21 @@ impl<'a> IntoIterator for &'a Info {
         if let Some(ref t) = self.version_commit {
             vec.push(("version_commit", t));
         }
+        if let Some(ref t) = self.override_version_tagged {
+            vec.push(("override_version_tagged", t));
+        }
+        if let Some(ref t) = self.override_version_commit {
+            vec.push(("override_version_commit", t));
+        }
+        if let Some(ref t) = self.override_version_docker_ci {
+            vec.push(("override_version_docker_ci", t));
+        }
         vec.into_iter()
     }
 }
 
 pub fn main() -> Result<()> {
-    let info = Info::from_workspace(env::current_dir()?)?;
+    let info = Info::from_workspace(env::current_dir()?, env::vars())?;
     for (k, v) in &info {
         println!("Setting {}={}", k, v);
         println!("::set-output name={}::{}", k, v);

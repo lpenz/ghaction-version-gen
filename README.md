@@ -29,6 +29,9 @@ ones used for versioning:
 
   The output itself is the tag, with the optional `v` stripped.
 
+  This output can be overriden via the `OVERRIDE_VERSION_TAGGED`
+  environment variable.
+
 - `version_commit`: for repositories that deploy on tags and on all
   commits to `master` or `main`. It's defined if the github event was
   a push of a tag or of one of those branches.
@@ -37,6 +40,9 @@ ones used for versioning:
   tag on the branch followed by the distance between the branch and
   the tag (always with the `v` stripped).
 
+  This output can be overriden via the `OVERRIDE_VERSION_COMMIT`
+  environment variable.
+
 - `version_docker_ci`: for repositories that deploy to
   [hub.docker](http://hub.docker.com/) continuously. If the commit was
   pushed to `master` or `main`, the variable has the value *"latest"*;
@@ -44,6 +50,9 @@ ones used for versioning:
   the value *"null"* as a string. This last case allows us to always
   use the variable as the version for the [build-push-action], which
   doesn't like empty strings.
+
+  This output can be overriden via the `OVERRIDE_VERSION_DOCKER_CI`
+  environment variable.
 
 
 You can these variables in action in the [Examples](#examples) section.
