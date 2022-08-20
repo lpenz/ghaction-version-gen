@@ -6,6 +6,8 @@ authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2018"
 license = "MIT"
 readme = "README.md"
+categories = ["command-line-utilities"]
+keywords = ["github-action", "version-generate"]
 
 [dependencies]
 structopt = { version = "0.3.26", features = [ "paw" ] }
