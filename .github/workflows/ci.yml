@@ -1,88 +1,36 @@
 ---
 name: CI
-on: [ push, pull_request ]
+on: [ workflow_dispatch, push, pull_request ]
 jobs:
   omnilint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: docker://lpenz/omnilint:v0.2
-  # Rust actions from:
-  # https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
-  cargo-check:
-    name: cargo check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-  test-coverage:
-    name: cargo test with coveralls
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - id: coverage
-        uses: docker://lpenz/ghaction-rust-coverage:0.4
-        with:
-          dependencies_debian: git
-      - uses: coverallsapp/github-action@v1.1.2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
-  rustfmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+    uses: lpenz/omnilint/.github/workflows/omnilint.yml@v0.5
+  rust:
+    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.9.0
+    with:
+      dependencies_debian: git
+      coveralls: true
+      publish_cratesio: true
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: docker/build-push-action@v2
+      - uses: actions/checkout@v3.0.2
+      - uses: docker/build-push-action@v3.1.1
         with:
           push: false
-  deploy:
-    needs: [ omnilint, cargo-check, test-coverage, rustfmt, clippy, docker-build ]
+  dockerhub:
+    needs: [ omnilint, rust, docker-build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.0.2
       - id: version
         uses: ./
-      - uses: docker/login-action@v1
+      - uses: docker/login-action@v2.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v3.1.1
         with:
           push: ${{ steps.version.outputs.version_docker_ci != 'null' }}
           tags: ${{ github.repository }}:${{ steps.version.outputs.version_docker_ci }}
-
