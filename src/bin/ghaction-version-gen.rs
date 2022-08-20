@@ -3,11 +3,13 @@
 // file 'LICENSE', which is part of this source code package.
 
 use anyhow::Result;
+use clap::Parser;
 
-#[derive(structopt::StructOpt)]
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
 pub struct Args {}
 
-#[paw::main]
-fn main(_: Args) -> Result<()> {
+fn main() -> Result<()> {
+    Args::parse();
     ghaction_version_gen::main()
 }
