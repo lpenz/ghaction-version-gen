@@ -6,6 +6,7 @@ authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2021"
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/lpenz/ghaction-version-gen"
 categories = ["command-line-utilities"]
 keywords = ["github-action", "version-generate"]
 
