@@ -6,6 +6,8 @@ pub mod git;
 pub mod rust;
 
 use std::env;
+use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::str;
 
@@ -242,11 +244,21 @@ impl<'a> IntoIterator for &'a Info {
     }
 }
 
+fn write_github_output(output_filename: &Path, info: &Info) -> Result<()> {
+    let mut output = fs::File::options().append(true).open(output_filename)?;
+    for (k, v) in info {
+        writeln!(output, "{}={}", k, v)?;
+    }
+    Ok(())
+}
+
 pub fn main() -> Result<()> {
     let info = Info::from_workspace(env::current_dir()?, env::vars())?;
     for (k, v) in &info {
         println!("Setting {}={}", k, v);
-        println!("::set-output name={}::{}", k, v);
+    }
+    if let Ok(output_filename) = env::var("GITHUB_OUTPUT") {
+        write_github_output(Path::new(&output_filename), &info)?;
     }
     if let Some(ref message) = info.version_mismatch {
         if info.is_push_tag == Some(true) {
