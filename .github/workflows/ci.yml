@@ -3,9 +3,9 @@ name: CI
 on: [ workflow_dispatch, push, pull_request ]
 jobs:
   omnilint:
-    uses: lpenz/omnilint/.github/workflows/omnilint.yml@v0.5
+    uses: lpenz/omnilint/.github/workflows/omnilint.yml@v0.5.1
   rust:
-    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.11.0
+    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.13.0
     with:
       dependencies_debian: git
       coveralls: true
