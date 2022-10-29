@@ -9,7 +9,8 @@ jobs:
     with:
       dependencies_debian: git
       coveralls: true
-      publish_cratesio: true
+      publish_cratesio: false
+      publish_github_release: false
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
   docker-build:
@@ -19,6 +20,24 @@ jobs:
       - uses: docker/build-push-action@v3.2.0
         with:
           push: false
+  publish-cratesio:
+    needs: [ omnilint, rust, docker-build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.1.0
+      - id: version
+        uses: ./
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          override: true
+      - name: publish crate on crates.io
+        uses: katyo/publish-crates@v1
+        if: steps.version.outputs.version_tagged != ''
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
   publish-dockerhub:
     needs: [ omnilint, rust, docker-build ]
     runs-on: ubuntu-latest
@@ -35,3 +54,16 @@ jobs:
         with:
           push: ${{ steps.version.outputs.version_docker_ci != 'null' }}
           tags: ${{ github.repository }}:${{ steps.version.outputs.version_docker_ci }}
+  publish-github-release:
+    needs: [ omnilint, rust, docker-build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.1.0
+      - id: version
+        uses: ./
+      - name: publish github release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        if: steps.version.outputs.version_tagged != ''
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
