@@ -33,7 +33,7 @@ impl TmpGit {
         let tmpgit = TmpGit {
             repo: tempfile::tempdir()?,
         };
-        tmpgit.run(&["git", "init"])?;
+        tmpgit.run(&["git", "init", "-b", "main"])?;
         tmpgit.run(&["git", "config", "--local", "user.name", "username"])?;
         tmpgit.run(&["git", "config", "--local", "user.email", "user@email.net"])?;
         tmpgit.run(&["git", "config", "--local", "commit.gpgsign", "false"])?;
