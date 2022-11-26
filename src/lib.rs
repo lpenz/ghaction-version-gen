@@ -24,6 +24,8 @@ pub struct Info {
     pub is_push_tag: Option<bool>,
     pub is_push_main: Option<bool>,
     pub commit: String,
+    pub commit_main: Option<String>,
+    pub is_main_here: Option<bool>,
     pub git_describe_tags: String,
     pub tag_latest: String,
     pub distance: String,
@@ -153,6 +155,12 @@ impl Info {
                 }
             }
         }
+        if self.is_push_tag == Some(true) && self.is_main_here != Some(true) {
+            self.version_mismatch = Some(format!(
+                "Version tag {} pushed over {}, but main branch is at {:?}",
+                self.tag_latest_ltrimv, self.commit, self.commit_main
+            ));
+        }
         Ok(())
     }
 
@@ -161,8 +169,17 @@ impl Info {
         enviter: impl Iterator<Item = (String, String)>,
     ) -> Result<Info> {
         let _ = git::unshallow(&repo);
+        let commit = git::head_commit(&repo)?;
+        let commit_main = git::ref_commit(&repo, "refs/remotes/origin/main")
+            .or_else(|_| git::ref_commit(&repo, "refs/remotes/origin/master"))
+            .or_else(|_| git::ref_commit(&repo, "refs/heads/main"))
+            .or_else(|_| git::ref_commit(&repo, "refs/heads/master"))
+            .ok();
+        let is_main_here = commit_main.as_ref().map(|c| c == &commit);
         let mut info = Info {
-            commit: git::head_commit(&repo)?,
+            commit,
+            commit_main,
+            is_main_here,
             ..Info::default()
         };
         info.parse_env(enviter);

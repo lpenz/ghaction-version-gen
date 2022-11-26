@@ -25,8 +25,12 @@ pub fn describe<P: AsRef<Path>>(repo: P) -> Result<String> {
     run(repo, &["describe", "--tags"])
 }
 
+pub fn ref_commit<P: AsRef<Path>>(repo: P, reference: &str) -> Result<String> {
+    run(repo, &["rev-parse", "--short", reference])
+}
+
 pub fn head_commit<P: AsRef<Path>>(repo: P) -> Result<String> {
-    run(repo, &["rev-parse", "--short", "HEAD"])
+    ref_commit(repo, "HEAD")
 }
 
 pub fn unshallow<P: AsRef<Path>>(repo: P) -> Result<String> {

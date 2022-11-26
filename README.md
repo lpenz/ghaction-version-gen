@@ -77,6 +77,10 @@ or as alternative versioning schemes:
 - `is_push_tag`: "true" if a tag was pushed.
 - `is_push_main`: "true" if `main` or `master` were pushed.
 - `commit`: the hash of the commit.
+- `commit_main`: the hash of the commit where the main/master branch
+  is.
+- `is_main_here`: "true" if the main/master branch coincides with the
+  current commit.
 - `git_describe_tags`: the output of `git describe --tags`
 - `tag_latest`: the most recent tag.
 - `distance`: the distance between the current commit and `tag_latest`.

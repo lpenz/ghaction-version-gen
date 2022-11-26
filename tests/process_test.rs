@@ -76,6 +76,8 @@ fn gitrepo() -> Result<()> {
     let commit1 = git::head_commit(&repo.repo)?;
     let info = repo.info_get()?;
     assert_eq!(info.commit, commit1.as_str());
+    assert_eq!(info.commit_main.clone().unwrap(), commit1);
+    assert_eq!(info.is_main_here, Some(true));
     assert_eq!(info.tag_latest, "");
     assert_eq!(info.tag_head, None);
     assert_eq!(info.distance, "");
