@@ -2,6 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
+use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::iter;
@@ -14,8 +15,15 @@ use ghaction_version_gen::git;
 use ghaction_version_gen::rust;
 use ghaction_version_gen::Info;
 
+#[cfg(test)]
+fn environ_reset() {
+    env::remove_var("GITHUB_EVENT_NAME");
+    env::remove_var("GITHUB_REF");
+}
+
 #[test]
 fn basic() -> Result<()> {
+    environ_reset();
     let gitdesc = "1.3.1-20-gc5f7a99";
     let mut info = Info::default();
     info.parse_describe(gitdesc)?;
@@ -68,6 +76,7 @@ impl TmpGit {
 
 #[test]
 fn gitrepo() -> Result<()> {
+    environ_reset();
     let repo = TmpGit::new()?;
     repo.file_write("foo.txt", "Hello, world!")?;
     repo.run(&["git", "add", "foo.txt"])?;
@@ -168,6 +177,7 @@ fn gitrepo() -> Result<()> {
 
 #[test]
 fn toml1() -> Result<()> {
+    environ_reset();
     let repo = TmpGit::new()?;
     assert_eq!(rust::crate_version(&repo.repo)?, None);
     repo.file_write("Cargo.toml", "")?;
