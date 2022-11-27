@@ -120,7 +120,6 @@ fn gitrepo() -> Result<()> {
     info.is_push = Some(true);
     info.is_tag = Some(false);
     info.is_main = Some(true);
-    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
     info.parse_files(&repo.repo)?;
     info.eval()?;
     assert_eq!(info.commit, commit2.as_str());
@@ -136,11 +135,6 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
     assert_eq!(info.version_docker_ci, "latest");
-    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
-    assert_eq!(
-        info.version_mismatch,
-        Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
-    );
     // Check overrides
     info.parse_env(
         vec![
@@ -171,6 +165,29 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest_ltrimv, "7.5");
     assert_eq!(info.distance, "1");
     assert_eq!(info.version_docker_ci, "null");
+    ghaction_version_gen::main()?;
+    Ok(())
+}
+
+#[test]
+fn gitrepo_rust() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    repo.run(&["git", "add", "Cargo.toml"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    let mut info = repo.info_get()?;
+    info.parse_files(&repo.repo)?;
+    info.is_push = Some(true);
+    info.is_tag = Some(true);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
+    assert_eq!(
+        info.version_mismatch,
+        Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
+    );
     ghaction_version_gen::main()?;
     Ok(())
 }
