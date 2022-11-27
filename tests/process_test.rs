@@ -12,6 +12,7 @@ use anyhow::ensure;
 use anyhow::Result;
 
 use ghaction_version_gen::git;
+use ghaction_version_gen::python;
 use ghaction_version_gen::rust;
 use ghaction_version_gen::Info;
 
@@ -203,5 +204,42 @@ fn toml1() -> Result<()> {
     assert!(rust::crate_version(&repo.repo).is_err());
     repo.file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
     assert_eq!(rust::crate_version(&repo.repo)?, Some("1.0".to_string()));
+    Ok(())
+}
+
+#[test]
+fn gitrepo_python() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write("setup.cfg", "[metadata]\nversion = 9.7\n")?;
+    repo.run(&["git", "add", "setup.cfg"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    let mut info = repo.info_get()?;
+    info.parse_files(&repo.repo)?;
+    info.is_push = Some(true);
+    info.is_tag = Some(true);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.python_module_version, Some("9.7".to_string()));
+    assert_eq!(
+        info.version_mismatch,
+        Some("file=setup.cfg::Version mismatch: tag 1.0.0 != 9.7 from setup.cfg".to_string())
+    );
+    ghaction_version_gen::main()?;
+    Ok(())
+}
+
+#[test]
+fn setupcfg() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    assert_eq!(python::module_version(&repo.repo)?, None);
+    repo.file_write("setup.cfg", "")?;
+    assert!(python::module_version(&repo.repo).is_err());
+    repo.file_write("setup.cfg", "[metadata]\n")?;
+    assert!(python::module_version(&repo.repo).is_err());
+    repo.file_write("setup.cfg", "[metadata]\nversion = 1.0\n")?;
+    assert_eq!(python::module_version(&repo.repo)?, Some("1.0".to_string()));
     Ok(())
 }

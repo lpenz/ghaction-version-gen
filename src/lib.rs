@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 pub mod git;
+pub mod python;
 pub mod rust;
 
 use std::env;
@@ -36,6 +37,7 @@ pub struct Info {
     pub tag_distance_ltrimv: String,
     pub tag_head_ltrimv: Option<String>,
     pub rust_crate_version: Option<String>,
+    pub python_module_version: Option<String>,
     pub version_mismatch: Option<String>,
     pub version_tagged: Option<String>,
     pub version_commit: Option<String>,
@@ -71,8 +73,11 @@ impl Info {
     }
 
     pub fn parse_files<P: AsRef<Path>>(&mut self, repo: P) -> Result<()> {
-        if let Some(version) = rust::crate_version(repo)? {
+        if let Some(version) = rust::crate_version(&repo)? {
             self.rust_crate_version = Some(version);
+        }
+        if let Some(version) = python::module_version(&repo)? {
+            self.python_module_version = Some(version);
         }
         Ok(())
     }
@@ -150,6 +155,14 @@ impl Info {
                 if version != &self.tag_latest_ltrimv {
                     self.version_mismatch = Some(format!(
                         "file=Cargo.toml::Version mismatch: tag {} != {} from Cargo.toml",
+                        self.tag_latest_ltrimv, version
+                    ));
+                }
+            }
+            if let Some(ref version) = self.python_module_version {
+                if version != &self.tag_latest_ltrimv {
+                    self.version_mismatch = Some(format!(
+                        "file=setup.cfg::Version mismatch: tag {} != {} from setup.cfg",
                         self.tag_latest_ltrimv, version
                     ));
                 }
@@ -244,6 +257,9 @@ impl<'a> IntoIterator for &'a Info {
         }
         if let Some(ref t) = self.rust_crate_version {
             vec.push(("rust_crate_version", t));
+        }
+        if let Some(ref t) = self.python_module_version {
+            vec.push(("python_module_version", t));
         }
         if let Some(ref t) = self.version_mismatch {
             vec.push(("version_mismatch", t));
