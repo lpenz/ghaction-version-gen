@@ -230,6 +230,12 @@ impl<'a> IntoIterator for &'a Info {
         if let Some(ref v) = self.is_push_main {
             vec.push(("is_push_main", bool2str(*v)));
         }
+        if let Some(ref v) = self.commit_main {
+            vec.push(("commit_main", v));
+        }
+        if let Some(ref v) = self.is_main_here {
+            vec.push(("is_main_here", bool2str(*v)));
+        }
         if let Some(ref t) = self.tag_head {
             vec.push(("tag_head", t));
         }
