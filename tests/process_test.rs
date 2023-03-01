@@ -166,7 +166,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest_ltrimv, "7.5");
     assert_eq!(info.distance, "1");
     assert_eq!(info.version_docker_ci, "null");
-    ghaction_version_gen::main()?;
+    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -189,7 +189,7 @@ fn gitrepo_rust() -> Result<()> {
         info.version_mismatch,
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
-    ghaction_version_gen::main()?;
+    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -226,7 +226,7 @@ fn gitrepo_python() -> Result<()> {
         info.version_mismatch,
         Some("file=setup.cfg::Version mismatch: tag 1.0.0 != 9.7 from setup.cfg".to_string())
     );
-    ghaction_version_gen::main()?;
+    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 

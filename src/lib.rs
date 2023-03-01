@@ -291,8 +291,14 @@ fn write_github_output(output_filename: &Path, info: &Info) -> Result<()> {
     Ok(())
 }
 
-pub fn main() -> Result<()> {
-    let info = Info::from_workspace(env::current_dir()?, env::vars())?;
+pub fn main(repo: Option<&Path>) -> Result<()> {
+    let curr_dir = env::current_dir()?;
+    let workspace = if let Some(path) = repo {
+        path
+    } else {
+        &curr_dir
+    };
+    let info = Info::from_workspace(workspace, env::vars())?;
     for (k, v) in &info {
         println!("Setting {}={}", k, v);
     }

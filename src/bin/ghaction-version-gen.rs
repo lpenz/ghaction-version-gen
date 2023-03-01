@@ -11,5 +11,5 @@ pub struct Args {}
 
 fn main() -> Result<()> {
     Args::parse();
-    ghaction_version_gen::main()
+    ghaction_version_gen::main(None)
 }
