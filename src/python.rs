@@ -16,6 +16,8 @@ pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
         // Could have used a proper error...
         if e.contains("No such file or directory") {
             return Ok(None);
+        } else {
+            return Err(anyhow!("parsing setup.cfg: {}", e));
         }
     }
     let version = config
