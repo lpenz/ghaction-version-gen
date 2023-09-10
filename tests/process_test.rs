@@ -171,6 +171,41 @@ fn gitrepo() -> Result<()> {
 }
 
 #[test]
+fn gitrepo_tag_before_branch() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write("foo.txt", "Hello, world!")?;
+    repo.run(&["git", "add", "foo.txt"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    repo.run(&["git", "checkout", "-b", "devel"])?;
+    repo.file_write("bar.txt", "Hello, world!")?;
+    repo.run(&["git", "add", "bar.txt"])?;
+    repo.run(&["git", "commit", "-m", "second commit"])?;
+    repo.run(&["git", "tag", "v1.1.0"])?;
+    let mut info = repo.info_get()?;
+    info.is_push = Some(true);
+    info.is_tag = Some(true);
+    info.eval()?;
+    assert_eq!(info.tag_distance, "v1.1.0-0");
+    assert_eq!(info.tag_distance_ltrimv, "1.1.0-0");
+    assert_eq!(info.version_tagged.unwrap(), "1.1.0");
+    assert_eq!(info.version_commit.unwrap(), "1.1.0");
+    // Bring main after the tag:
+    repo.run(&["git", "branch", "-f", "main", "HEAD"])?;
+    repo.run(&["git", "checkout", "main"])?;
+    let mut info = repo.info_get()?;
+    info.is_push = Some(true);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.tag_distance, "v1.1.0-0");
+    assert_eq!(info.tag_distance_ltrimv, "1.1.0-0");
+    assert_eq!(info.version_tagged, None);
+    assert_eq!(info.version_commit, None);
+    Ok(())
+}
+
+#[test]
 fn gitrepo_rust() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;

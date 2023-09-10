@@ -133,11 +133,17 @@ impl Info {
                 .unwrap_or(&self.tag_latest_ltrimv)
                 .clone();
         } else if self.is_push_main == Some(true) {
-            self.version_commit = self
-                .override_version_commit
-                .as_ref()
-                .or(Some(&self.tag_distance_ltrimv))
-                .cloned();
+            if self.distance.parse::<u32>()? > 0 {
+                // Only set version_commit if we are not putting the
+                // commit over a tag:
+                // If we are, then we already had a version_commit on
+                // the tag itself.
+                self.version_commit = self
+                    .override_version_commit
+                    .as_ref()
+                    .or(Some(&self.tag_distance_ltrimv))
+                    .cloned();
+            }
             self.version_docker_ci = self
                 .override_version_docker_ci
                 .as_ref()
@@ -223,9 +229,9 @@ impl<'a> IntoIterator for &'a Info {
             ("tag_latest", &self.tag_latest),
             ("distance", &self.distance),
             ("dash_distance", &self.dash_distance),
-            ("tag_distance", &self.dash_distance),
+            ("tag_distance", &self.tag_distance),
             ("tag_latest_ltrimv", &self.tag_latest_ltrimv),
-            ("tag_distance_ltrimv", &self.tag_latest_ltrimv),
+            ("tag_distance_ltrimv", &self.tag_distance_ltrimv),
             ("version_docker_ci", &self.version_docker_ci),
         ];
         if let Some(ref v) = self.is_push {
