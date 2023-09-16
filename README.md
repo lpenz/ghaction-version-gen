@@ -115,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.7
+        uses: docker://lpenz/ghaction-version-gen:0.13.4
       ...
       - name: deploy
         uses: <deploy action>
@@ -151,7 +151,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.7
+        uses: docker://lpenz/ghaction-version-gen:0.13.4
       - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
