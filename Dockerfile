@@ -2,7 +2,7 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENSE', which is part of this source code package.
 
-FROM rust:1.72-alpine3.18 AS build
+FROM rust:1.73-alpine3.18 AS build
 WORKDIR /src
 COPY Cargo.* ./
 COPY src ./src
