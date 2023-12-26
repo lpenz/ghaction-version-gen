@@ -239,6 +239,8 @@ fn toml1() -> Result<()> {
     assert!(rust::crate_version(&repo.repo).is_err());
     repo.file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
     assert_eq!(rust::crate_version(&repo.repo)?, Some("1.0".to_string()));
+    repo.file_write("Cargo.toml", "[workspace]\nmembers = [ \"abc\" ]\n")?;
+    assert!(rust::crate_version(&repo.repo)?.is_none());
     Ok(())
 }
 

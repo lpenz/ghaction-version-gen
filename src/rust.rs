@@ -22,6 +22,9 @@ pub fn crate_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
     }
     let contents = result.unwrap();
     let info = contents.parse::<Value>()?;
+    if info.get("workspace").is_some() {
+        return Ok(None);
+    }
     let package = &info
         .get("package")
         .ok_or_else(|| anyhow!("could not find package section"))?;
