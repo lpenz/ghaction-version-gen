@@ -2,20 +2,21 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENSE', which is part of this source code package.
 
-FROM rust:1.73-alpine3.18 AS build
+FROM rust:1.76-alpine3.18 AS build
+RUN set -e -x; \
+    apk update; \
+    apk add --no-cache musl-dev
 WORKDIR /src
 COPY Cargo.* ./
 COPY src ./src
-RUN set -e -x; \
-    apk update; \
-    apk add --no-cache musl-dev; \
-    cargo build --release
+RUN set -e -x; cargo build --release
 
 FROM alpine:3.18
 RUN set -e -x; \
     apk update; \
     apk add --no-cache git; \
-    rm -rf /var/cache/apk/*; \
+    rm -rf /var/cache/apk/*
+RUN set -e -x; \
     git config --system safe.directory '*'
 COPY --from=build /src/target/release/ghaction-version-gen /usr/local/bin/
 CMD ["/usr/local/bin/ghaction-version-gen"]
