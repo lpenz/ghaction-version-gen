@@ -5,7 +5,7 @@ jobs:
   omnilint:
     uses: lpenz/omnilint/.github/workflows/omnilint.yml@v0.5.1
   rust:
-    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.17.0
+    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.23.0
     with:
       dependencies_debian: git
       coveralls: true
@@ -16,15 +16,15 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.0.0
-      - uses: docker/build-push-action@v5.0.0
+      - uses: actions/checkout@v4.1.1
+      - uses: docker/build-push-action@v5.1.0
         with:
           push: false
   publish-cratesio:
     needs: [ omnilint, rust, docker-build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.0.0
+      - uses: actions/checkout@v4.1.1
       - id: version
         uses: ./
       - uses: actions-rs/toolchain@v1.0.7
@@ -42,7 +42,7 @@ jobs:
     needs: [ omnilint, rust, docker-build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.0.0
+      - uses: actions/checkout@v4.1.1
       - id: version
         uses: ./
       - uses: docker/login-action@v3.0.0
@@ -50,7 +50,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
         if: steps.version.outputs.version_docker_ci != 'null'
-      - uses: docker/build-push-action@v5.0.0
+      - uses: docker/build-push-action@v5.1.0
         with:
           push: ${{ steps.version.outputs.version_docker_ci != 'null' }}
           tags: ${{ github.repository }}:${{ steps.version.outputs.version_docker_ci }}
@@ -58,7 +58,7 @@ jobs:
     needs: [ omnilint, rust, docker-build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.0.0
+      - uses: actions/checkout@v4.1.1
       - id: version
         uses: ./
       - name: publish github release
