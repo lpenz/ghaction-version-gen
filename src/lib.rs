@@ -133,16 +133,18 @@ impl Info {
                 .unwrap_or(&self.tag_latest_ltrimv)
                 .clone();
         } else if self.is_push_main == Some(true) {
-            if self.distance.parse::<u32>()? > 0 {
-                // Only set version_commit if we are not putting the
-                // commit over a tag:
-                // If we are, then we already had a version_commit on
-                // the tag itself.
-                self.version_commit = self
-                    .override_version_commit
-                    .as_ref()
-                    .or(Some(&self.tag_distance_ltrimv))
-                    .cloned();
+            if let Ok(distance) = self.distance.parse::<u32>() {
+                if distance > 0 {
+                    // Only set version_commit if we are not putting the
+                    // commit over a tag:
+                    // If we are, then we already had a version_commit on
+                    // the tag itself.
+                    self.version_commit = self
+                        .override_version_commit
+                        .as_ref()
+                        .or(Some(&self.tag_distance_ltrimv))
+                        .cloned();
+                }
             }
             self.version_docker_ci = self
                 .override_version_docker_ci
@@ -156,7 +158,9 @@ impl Info {
                 .unwrap_or(&String::from("null"))
                 .clone();
         }
-        if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
+        if !self.tag_latest_ltrimv.is_empty()
+            && (self.is_push_tag == Some(true) || self.is_push_main == Some(true))
+        {
             if let Some(ref version) = self.rust_crate_version {
                 if version != &self.tag_latest_ltrimv {
                     self.version_mismatch = Some(format!(

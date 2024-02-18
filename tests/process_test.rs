@@ -206,6 +206,21 @@ fn gitrepo_tag_before_branch() -> Result<()> {
 }
 
 #[test]
+fn gitrepo_no_tag() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write("foo.txt", "Hello, world!")?;
+    repo.run(&["git", "add", "foo.txt"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    let mut info = repo.info_get()?;
+    info.is_push = Some(true);
+    info.is_tag = Some(false);
+    info.is_main = Some(true);
+    info.eval()?;
+    Ok(())
+}
+
+#[test]
 fn gitrepo_rust() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
@@ -225,6 +240,23 @@ fn gitrepo_rust() -> Result<()> {
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    Ok(())
+}
+
+#[test]
+fn gitrepo_no_tag_rust() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    repo.run(&["git", "add", "Cargo.toml"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    let mut info = repo.info_get()?;
+    info.is_push = Some(true);
+    info.is_tag = Some(false);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
+    assert_eq!(info.version_mismatch, None);
     Ok(())
 }
 
