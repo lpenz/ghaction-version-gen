@@ -19,6 +19,7 @@ use regex::Regex;
 
 #[derive(Debug, Default, Clone)]
 pub struct Info {
+    pub pwd_basename: String,
     pub is_push: Option<bool>,
     pub is_tag: Option<bool>,
     pub is_main: Option<bool>,
@@ -46,12 +47,21 @@ pub struct Info {
     pub override_version_tagged: Option<String>,
     pub override_version_commit: Option<String>,
     pub override_version_docker_ci: Option<String>,
+    pub name: String,
 }
 
 impl Info {
     pub fn parse_env(&mut self, enviter: impl Iterator<Item = (String, String)>) {
         for (k, v) in enviter {
             match k.as_str() {
+                "PWD" => {
+                    let path = Path::new(&v);
+                    self.pwd_basename = path
+                        .file_name()
+                        .expect("PWD basename")
+                        .display()
+                        .to_string();
+                }
                 "GITHUB_EVENT_NAME" => {
                     self.is_push = Some(v == "push");
                 }
@@ -118,6 +128,11 @@ impl Info {
             self.tag_head_ltrimv = Some(re.replace(tag_head, "$tag_ltrimv").into());
         }
         // Evaluate version outputs, correlating the previous variables
+        self.name = if let Some(name) = &self.rust_crate_name {
+            name.clone()
+        } else {
+            self.pwd_basename.clone()
+        };
         if self.is_push_tag == Some(true) {
             self.version_tagged = self
                 .override_version_tagged

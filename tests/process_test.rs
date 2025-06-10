@@ -35,6 +35,7 @@ fn basic() -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 struct TmpGit {
     pub repo: tempfile::TempDir,
 }
@@ -144,12 +145,18 @@ fn gitrepo() -> Result<()> {
             ("OVERRIDE_VERSION_TAGGED", "a"),
             ("OVERRIDE_VERSION_COMMIT", "b"),
             ("OVERRIDE_VERSION_DOCKER_CI", "c"),
+            ("PWD", &repo.repo.path().display().to_string()),
         ]
         .into_iter()
         .map(|(a, b)| (String::from(a), String::from(b))),
     );
     info.is_tag = Some(true);
     info.eval()?;
+    assert_eq!(
+        info.pwd_basename,
+        repo.repo.path().file_name().unwrap().display().to_string()
+    );
+    assert_eq!(info.name, info.pwd_basename);
     assert_eq!(info.override_version_tagged, Some(String::from("a")));
     assert_eq!(info.override_version_commit, Some(String::from("b")));
     assert_eq!(info.override_version_docker_ci, Some(String::from("c")));
@@ -239,6 +246,7 @@ fn gitrepo_rust() -> Result<()> {
     info.is_tag = Some(true);
     info.is_main = Some(true);
     info.eval()?;
+    assert_eq!(info.name, "test");
     assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
     assert_eq!(
         info.version_mismatch,
@@ -284,7 +292,7 @@ fn toml1() -> Result<()> {
     let data = rust::crate_data(&repo.repo)?;
     assert!(data.is_some());
     let data = data.unwrap();
-    assert_eq!(data.name, "\"test\"".to_string());
+    assert_eq!(data.name, "test".to_string());
     assert_eq!(data.version, "1.0".to_string());
     repo.file_write("Cargo.toml", "[workspace]\nmembers = [ \"abc\" ]\n")?;
     assert!(rust::crate_data(&repo.repo)?.is_none());

@@ -34,9 +34,13 @@ pub fn crate_data<P: AsRef<Path>>(repo: P) -> Result<Option<Crate>> {
     let package = &info
         .get("package")
         .ok_or_else(|| anyhow!("could not find package section"))?;
-    let name = &package
+    let mut name: String = package
         .get("name")
-        .ok_or_else(|| anyhow!("could not find name in package section"))?;
+        .ok_or_else(|| anyhow!("could not find name in package section"))?
+        .to_string();
+    if &name[0..1] == "\"" && &name[name.len() - 1..name.len()] == "\"" {
+        name = name[1..name.len() - 1].to_string();
+    }
     let version_value = &package
         .get("version")
         .ok_or_else(|| anyhow!("could not find version in package section"))?;
