@@ -48,6 +48,7 @@ pub struct Info {
     pub override_version_commit: Option<String>,
     pub override_version_docker_ci: Option<String>,
     pub name: String,
+    pub package_basename: String,
 }
 
 impl Info {
@@ -181,6 +182,18 @@ impl Info {
                 .as_ref()
                 .unwrap_or(&String::from("null"))
                 .clone();
+        }
+        if let Some(version_commit) = &self.version_commit {
+            // If we have a full version_commit, use it.
+            // (i.e. we are pushing a tag or main after a tag)
+            self.package_basename = format!("{}-{}", self.name, version_commit);
+        } else if let Some(tag_distance_ltrimv) = &self.tag_distance_ltrimv {
+            // If we are pushing non-main after a tag, add the tag-distance and the commit:
+            self.package_basename =
+                format!("{}-{}-{}", self.name, tag_distance_ltrimv, self.commit);
+        } else {
+            // Last-resort: if we never had a tag, use the name.
+            self.package_basename = self.name.clone();
         }
         // Warnings
         if let Some(tag_latest_ltrimv) = &self.tag_latest_ltrimv {

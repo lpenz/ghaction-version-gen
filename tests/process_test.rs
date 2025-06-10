@@ -211,6 +211,7 @@ fn gitrepo_tag_before_branch() -> Result<()> {
     assert_eq!(info.tag_distance_ltrimv, Some("1.1.0-0".to_string()));
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, None);
+    assert_eq!(info.package_basename, format!("-1.1.0-0-{}", info.commit));
     Ok(())
 }
 
@@ -252,6 +253,8 @@ fn gitrepo_rust() -> Result<()> {
         info.version_mismatch,
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
+    assert_eq!(info.version_commit, Some("1.0.0".to_string()));
+    assert_eq!(info.package_basename, "test-1.0.0");
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
@@ -277,6 +280,71 @@ fn gitrepo_no_tag_rust() -> Result<()> {
     assert_eq!(info.tag_distance, None);
     assert_eq!(info.tag_latest_ltrimv, None);
     assert_eq!(info.tag_distance_ltrimv, None);
+    assert_eq!(info.package_basename, "test");
+    Ok(())
+}
+
+#[test]
+fn gitrepo_after_tag_rust() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write(
+        "Cargo.toml",
+        "[package]\nname = \"test\"\nversion = \"9.7\"\n",
+    )?;
+    repo.run(&["git", "add", "Cargo.toml"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    repo.file_write("new", "\n")?;
+    repo.run(&["git", "add", "new"])?;
+    repo.run(&["git", "commit", "-m", "second commit"])?;
+    let mut info = repo.info_get()?;
+    info.parse_files(&repo.repo)?;
+    info.is_push = Some(true);
+    info.is_tag = Some(false);
+    info.is_main = Some(false);
+    info.eval()?;
+    assert_eq!(info.name, "test");
+    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
+    assert_eq!(info.version_mismatch, None);
+    assert_eq!(info.version_commit, None);
+    assert_eq!(
+        info.package_basename,
+        format!("test-1.0.0-1-{}", info.commit)
+    );
+    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    Ok(())
+}
+
+#[test]
+fn gitrepo_after_tag_rust_main() -> Result<()> {
+    environ_reset();
+    let repo = TmpGit::new()?;
+    repo.file_write(
+        "Cargo.toml",
+        "[package]\nname = \"test\"\nversion = \"9.7\"\n",
+    )?;
+    repo.run(&["git", "add", "Cargo.toml"])?;
+    repo.run(&["git", "commit", "-m", "first commit"])?;
+    repo.run(&["git", "tag", "v1.0.0"])?;
+    repo.file_write("new", "\n")?;
+    repo.run(&["git", "add", "new"])?;
+    repo.run(&["git", "commit", "-m", "second commit"])?;
+    let mut info = repo.info_get()?;
+    info.parse_files(&repo.repo)?;
+    info.is_push = Some(true);
+    info.is_tag = Some(false);
+    info.is_main = Some(true);
+    info.eval()?;
+    assert_eq!(info.name, "test");
+    assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
+    assert_eq!(
+        info.version_mismatch,
+        Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
+    );
+    assert_eq!(info.version_commit, Some("1.0.0-1".into()));
+    assert_eq!(info.package_basename, format!("test-1.0.0-1"));
+    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
