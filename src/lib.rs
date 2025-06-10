@@ -262,10 +262,12 @@ impl<'a> IntoIterator for &'a Info {
     type IntoIter = std::vec::IntoIter<(&'static str, &'a str)>;
     fn into_iter(self) -> Self::IntoIter {
         let mut vec: Vec<(&'static str, &'a str)> = vec![
+            ("name", &self.name),
             ("commit", &self.commit),
             ("git_describe_tags", &self.git_describe_tags),
             ("tag_latest", &self.tag_latest),
             ("version_docker_ci", &self.version_docker_ci),
+            ("package_basename", &self.package_basename),
         ];
         if let Some(ref v) = self.is_push {
             vec.push(("is_push", bool2str(*v)));
