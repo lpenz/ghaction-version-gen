@@ -2,7 +2,7 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENSE', which is part of this source code package.
 
-FROM docker.io/rust:1.84-alpine3.20 AS build
+FROM docker.io/rust:1.87-alpine3.22 AS build
 RUN set -e -x; \
     apk update; \
     apk add --no-cache musl-dev
@@ -11,7 +11,7 @@ COPY Cargo.* ./
 COPY src ./src
 RUN set -e -x; cargo build --release
 
-FROM docker.io/alpine:3.20
+FROM docker.io/alpine:3.22
 RUN set -e -x; \
     apk update; \
     apk add --no-cache git; \

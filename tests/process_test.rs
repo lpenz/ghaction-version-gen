@@ -18,8 +18,10 @@ use ghaction_version_gen::Info;
 
 #[cfg(test)]
 fn environ_reset() {
-    env::remove_var("GITHUB_EVENT_NAME");
-    env::remove_var("GITHUB_REF");
+    unsafe {
+        env::remove_var("GITHUB_EVENT_NAME");
+        env::remove_var("GITHUB_REF");
+    }
 }
 
 #[test]
