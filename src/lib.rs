@@ -30,12 +30,12 @@ pub struct Info {
     pub is_main_here: Option<bool>,
     pub git_describe_tags: String,
     pub tag_latest: String,
-    pub distance: String,
-    pub dash_distance: String,
-    pub tag_distance: String,
+    pub distance: Option<String>,
+    pub dash_distance: Option<String>,
+    pub tag_distance: Option<String>,
     pub tag_head: Option<String>,
-    pub tag_latest_ltrimv: String,
-    pub tag_distance_ltrimv: String,
+    pub tag_latest_ltrimv: Option<String>,
+    pub tag_distance_ltrimv: Option<String>,
     pub tag_head_ltrimv: Option<String>,
     pub rust_crate_name: Option<String>,
     pub rust_crate_version: Option<String>,
@@ -100,10 +100,10 @@ impl Info {
         let re = Regex::new(r"^(?P<tag_latest>.*)-(?P<distance>\d+)-g[0-9a-f]+$")?;
         if let Some(m) = re.captures(s) {
             self.tag_latest = m.name("tag_latest").unwrap().as_str().into();
-            self.distance = m.name("distance").unwrap().as_str().into();
+            self.distance = Some(m.name("distance").unwrap().as_str().into());
         } else {
             self.tag_latest = s.into();
-            self.distance = "0".into();
+            self.distance = Some("0".into());
             self.tag_head = Some(s.into());
         }
         Ok(())
@@ -119,11 +119,15 @@ impl Info {
             (Some(a), Some(b)) => Some(a && b),
             _ => None,
         };
-        self.dash_distance = format!("-{}", self.distance);
-        self.tag_distance = format!("{}{}", self.tag_latest, self.dash_distance);
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
-        self.tag_latest_ltrimv = re.replace(&self.tag_latest, "$tag_ltrimv").into();
-        self.tag_distance_ltrimv = re.replace(&self.tag_distance, "$tag_ltrimv").into();
+        if let Some(ref distance) = self.distance {
+            let dash_distance = format!("-{}", distance);
+            self.dash_distance = Some(dash_distance.clone());
+            let tag_distance = format!("{}{}", self.tag_latest, dash_distance);
+            self.tag_distance = Some(tag_distance.clone());
+            self.tag_latest_ltrimv = Some(re.replace(&self.tag_latest, "$tag_ltrimv").into());
+            self.tag_distance_ltrimv = Some(re.replace(&tag_distance, "$tag_ltrimv").into());
+        }
         if let Some(ref tag_head) = self.tag_head {
             self.tag_head_ltrimv = Some(re.replace(tag_head, "$tag_ltrimv").into());
         }
@@ -142,25 +146,28 @@ impl Info {
             self.version_commit = self
                 .override_version_commit
                 .as_ref()
-                .or(Some(&self.tag_latest_ltrimv))
+                .or(self.tag_latest_ltrimv.as_ref())
                 .cloned();
             self.version_docker_ci = self
                 .override_version_docker_ci
                 .as_ref()
-                .unwrap_or(&self.tag_latest_ltrimv)
-                .clone();
+                .or(self.tag_latest_ltrimv.as_ref())
+                .cloned()
+                .unwrap();
         } else if self.is_push_main == Some(true) {
-            if let Ok(distance) = self.distance.parse::<u32>() {
-                if distance > 0 {
-                    // Only set version_commit if we are not putting the
-                    // commit over a tag:
-                    // If we are, then we already had a version_commit on
-                    // the tag itself.
-                    self.version_commit = self
-                        .override_version_commit
-                        .as_ref()
-                        .or(Some(&self.tag_distance_ltrimv))
-                        .cloned();
+            if let Some(distance_str) = &self.distance {
+                if let Ok(distance) = distance_str.parse::<u32>() {
+                    if distance > 0 {
+                        // Only set version_commit if we are not putting the
+                        // commit over a tag.
+                        // If we are, then we already had a version_commit on
+                        // the tag itself, or we don't have a tag at all.
+                        self.version_commit = self
+                            .override_version_commit
+                            .as_ref()
+                            .or(self.tag_distance_ltrimv.as_ref())
+                            .cloned();
+                    }
                 }
             }
             self.version_docker_ci = self
@@ -175,31 +182,32 @@ impl Info {
                 .unwrap_or(&String::from("null"))
                 .clone();
         }
-        if !self.tag_latest_ltrimv.is_empty()
-            && (self.is_push_tag == Some(true) || self.is_push_main == Some(true))
-        {
-            if let Some(ref version) = self.rust_crate_version {
-                if version != &self.tag_latest_ltrimv {
-                    self.version_mismatch = Some(format!(
-                        "file=Cargo.toml::Version mismatch: tag {} != {} from Cargo.toml",
-                        self.tag_latest_ltrimv, version
-                    ));
+        // Warnings
+        if let Some(tag_latest_ltrimv) = &self.tag_latest_ltrimv {
+            if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
+                if let Some(ref version) = self.rust_crate_version {
+                    if version != tag_latest_ltrimv {
+                        self.version_mismatch = Some(format!(
+                            "file=Cargo.toml::Version mismatch: tag {} != {} from Cargo.toml",
+                            tag_latest_ltrimv, version
+                        ));
+                    }
+                }
+                if let Some(ref version) = self.python_module_version {
+                    if version != tag_latest_ltrimv {
+                        self.version_mismatch = Some(format!(
+                            "file=setup.cfg::Version mismatch: tag {} != {} from setup.cfg",
+                            tag_latest_ltrimv, version
+                        ));
+                    }
                 }
             }
-            if let Some(ref version) = self.python_module_version {
-                if version != &self.tag_latest_ltrimv {
-                    self.version_mismatch = Some(format!(
-                        "file=setup.cfg::Version mismatch: tag {} != {} from setup.cfg",
-                        self.tag_latest_ltrimv, version
-                    ));
-                }
+            if self.is_push_tag == Some(true) && self.is_main_here != Some(true) {
+                self.version_mismatch = Some(format!(
+                    "Version tag {} pushed over {}, but main branch is at {:?}",
+                    tag_latest_ltrimv, self.commit, self.commit_main
+                ));
             }
-        }
-        if self.is_push_tag == Some(true) && self.is_main_here != Some(true) {
-            self.version_mismatch = Some(format!(
-                "Version tag {} pushed over {}, but main branch is at {:?}",
-                self.tag_latest_ltrimv, self.commit, self.commit_main
-            ));
         }
         Ok(())
     }
@@ -244,11 +252,6 @@ impl<'a> IntoIterator for &'a Info {
             ("commit", &self.commit),
             ("git_describe_tags", &self.git_describe_tags),
             ("tag_latest", &self.tag_latest),
-            ("distance", &self.distance),
-            ("dash_distance", &self.dash_distance),
-            ("tag_distance", &self.tag_distance),
-            ("tag_latest_ltrimv", &self.tag_latest_ltrimv),
-            ("tag_distance_ltrimv", &self.tag_distance_ltrimv),
             ("version_docker_ci", &self.version_docker_ci),
         ];
         if let Some(ref v) = self.is_push {
@@ -277,6 +280,21 @@ impl<'a> IntoIterator for &'a Info {
         }
         if let Some(ref t) = self.tag_head_ltrimv {
             vec.push(("tag_head_ltrimv", t));
+        }
+        if let Some(ref t) = self.distance {
+            vec.push(("distance", t));
+        }
+        if let Some(ref t) = self.dash_distance {
+            vec.push(("dash_distance", t));
+        }
+        if let Some(ref t) = self.tag_distance {
+            vec.push(("tag_distance", t));
+        }
+        if let Some(ref t) = self.tag_latest_ltrimv {
+            vec.push(("tag_latest_ltrimv", t));
+        }
+        if let Some(ref t) = self.tag_distance_ltrimv {
+            vec.push(("tag_distance_ltrimv", t));
         }
         if let Some(ref t) = self.rust_crate_version {
             vec.push(("rust_crate_version", t));

@@ -93,7 +93,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.is_main_here, Some(true));
     assert_eq!(info.tag_latest, "");
     assert_eq!(info.tag_head, None);
-    assert_eq!(info.distance, "");
+    assert_eq!(info.distance, None);
     assert_eq!(info.version_docker_ci, "null");
     // Check tag on HEAD
     repo.run(&["git", "tag", "v1.0.0"])?;
@@ -105,12 +105,12 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.commit, commit1.as_str());
     assert_eq!(info.git_describe_tags, "v1.0.0");
     assert_eq!(info.tag_latest, "v1.0.0");
-    assert_eq!(info.distance, "0");
-    assert_eq!(info.dash_distance, "-0");
-    assert_eq!(info.tag_distance, "v1.0.0-0");
+    assert_eq!(info.distance, Some("0".to_string()));
+    assert_eq!(info.dash_distance, Some("-0".to_string()));
+    assert_eq!(info.tag_distance, Some("v1.0.0-0".to_string()));
     assert_eq!(info.tag_head, Some("v1.0.0".to_string()));
-    assert_eq!(info.tag_latest_ltrimv, "1.0.0");
-    assert_eq!(info.tag_distance_ltrimv, "1.0.0-0");
+    assert_eq!(info.tag_latest_ltrimv, Some("1.0.0".to_string()));
+    assert_eq!(info.tag_distance_ltrimv, Some("1.0.0-0".to_string()));
     assert_eq!(info.tag_head_ltrimv, Some("1.0.0".to_string()));
     assert_eq!(info.version_tagged, Some("1.0.0".to_string()));
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
@@ -129,12 +129,12 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.commit, commit2.as_str());
     assert_eq!(info.git_describe_tags, format!("v1.0.0-1-g{}", commit2));
     assert_eq!(info.tag_latest, "v1.0.0");
-    assert_eq!(info.distance, "1");
-    assert_eq!(info.dash_distance, "-1");
-    assert_eq!(info.tag_distance, "v1.0.0-1");
+    assert_eq!(info.distance, Some("1".to_string()));
+    assert_eq!(info.dash_distance, Some("-1".to_string()));
+    assert_eq!(info.tag_distance, Some("v1.0.0-1".to_string()));
     assert_eq!(info.tag_head, None);
-    assert_eq!(info.tag_latest_ltrimv, "1.0.0");
-    assert_eq!(info.tag_distance_ltrimv, "1.0.0-1");
+    assert_eq!(info.tag_latest_ltrimv, Some("1.0.0".to_string()));
+    assert_eq!(info.tag_distance_ltrimv, Some("1.0.0-1".to_string()));
     assert_eq!(info.tag_head_ltrimv, None);
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, Some("1.0.0-1".to_string()));
@@ -172,8 +172,8 @@ fn gitrepo() -> Result<()> {
     let info = repo.info_get()?;
     assert_eq!(info.commit, commit3.as_str());
     assert_eq!(info.tag_latest, "7.5");
-    assert_eq!(info.tag_latest_ltrimv, "7.5");
-    assert_eq!(info.distance, "1");
+    assert_eq!(info.tag_latest_ltrimv, Some("7.5".to_string()));
+    assert_eq!(info.distance, Some("1".to_string()));
     assert_eq!(info.version_docker_ci, "null");
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
@@ -196,8 +196,8 @@ fn gitrepo_tag_before_branch() -> Result<()> {
     info.is_push = Some(true);
     info.is_tag = Some(true);
     info.eval()?;
-    assert_eq!(info.tag_distance, "v1.1.0-0");
-    assert_eq!(info.tag_distance_ltrimv, "1.1.0-0");
+    assert_eq!(info.tag_distance, Some("v1.1.0-0".to_string()));
+    assert_eq!(info.tag_distance_ltrimv, Some("1.1.0-0".to_string()));
     assert_eq!(info.version_tagged.unwrap(), "1.1.0");
     assert_eq!(info.version_commit.unwrap(), "1.1.0");
     // Bring main after the tag:
@@ -207,8 +207,8 @@ fn gitrepo_tag_before_branch() -> Result<()> {
     info.is_push = Some(true);
     info.is_main = Some(true);
     info.eval()?;
-    assert_eq!(info.tag_distance, "v1.1.0-0");
-    assert_eq!(info.tag_distance_ltrimv, "1.1.0-0");
+    assert_eq!(info.tag_distance, Some("v1.1.0-0".to_string()));
+    assert_eq!(info.tag_distance_ltrimv, Some("1.1.0-0".to_string()));
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, None);
     Ok(())
@@ -273,6 +273,10 @@ fn gitrepo_no_tag_rust() -> Result<()> {
     info.eval()?;
     assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
     assert_eq!(info.version_mismatch, None);
+    assert_eq!(info.dash_distance, None);
+    assert_eq!(info.tag_distance, None);
+    assert_eq!(info.tag_latest_ltrimv, None);
+    assert_eq!(info.tag_distance_ltrimv, None);
     Ok(())
 }
 
