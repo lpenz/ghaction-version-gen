@@ -5,8 +5,8 @@
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::ensure;
 use anyhow::Result;
+use anyhow::ensure;
 
 pub fn run<P: AsRef<Path>>(repo: P, args: &[&str]) -> Result<String> {
     let result = Command::new("git")

@@ -8,13 +8,13 @@ use std::io::Write;
 use std::iter;
 use std::process::Command;
 
-use anyhow::ensure;
 use anyhow::Result;
+use anyhow::ensure;
 
+use ghaction_version_gen::Info;
 use ghaction_version_gen::git;
 use ghaction_version_gen::python;
 use ghaction_version_gen::rust;
-use ghaction_version_gen::Info;
 
 #[cfg(test)]
 fn environ_reset() {

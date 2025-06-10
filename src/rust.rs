@@ -6,8 +6,8 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use toml::Value;
 
 #[derive(Debug, PartialEq, Eq)]

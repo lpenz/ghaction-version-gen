@@ -4,8 +4,8 @@
 
 use std::path::Path;
 
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use configparser::ini::Ini;
 
 pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {

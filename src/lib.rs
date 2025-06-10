@@ -12,8 +12,8 @@ use std::io::Write;
 use std::path::Path;
 use std::str;
 
-use anyhow::bail;
 use anyhow::Result;
+use anyhow::bail;
 
 use regex::Regex;
 
@@ -218,11 +218,7 @@ impl Info {
 }
 
 pub fn bool2str(b: bool) -> &'static str {
-    if b {
-        "true"
-    } else {
-        "false"
-    }
+    if b { "true" } else { "false" }
 }
 
 impl<'a> IntoIterator for &'a Info {
