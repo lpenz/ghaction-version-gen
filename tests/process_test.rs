@@ -224,7 +224,10 @@ fn gitrepo_no_tag() -> Result<()> {
 fn gitrepo_rust() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
-    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    repo.file_write(
+        "Cargo.toml",
+        "[package]\nname = \"test\"\nversion = \"9.7\"\n",
+    )?;
     repo.run(&["git", "add", "Cargo.toml"])?;
     repo.run(&["git", "commit", "-m", "first commit"])?;
     repo.run(&["git", "tag", "v1.0.0"])?;
@@ -247,7 +250,10 @@ fn gitrepo_rust() -> Result<()> {
 fn gitrepo_no_tag_rust() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
-    repo.file_write("Cargo.toml", "[package]\nversion = \"9.7\"\n")?;
+    repo.file_write(
+        "Cargo.toml",
+        "[package]\nname = \"test\"\nversion = \"9.7\"\n",
+    )?;
     repo.run(&["git", "add", "Cargo.toml"])?;
     repo.run(&["git", "commit", "-m", "first commit"])?;
     let mut info = repo.info_get()?;
@@ -264,15 +270,22 @@ fn gitrepo_no_tag_rust() -> Result<()> {
 fn toml1() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
-    assert_eq!(rust::crate_version(&repo.repo)?, None);
+    assert_eq!(rust::crate_data(&repo.repo)?, None);
     repo.file_write("Cargo.toml", "")?;
-    assert!(rust::crate_version(&repo.repo).is_err());
+    assert!(rust::crate_data(&repo.repo).is_err());
     repo.file_write("Cargo.toml", "[package]\n")?;
-    assert!(rust::crate_version(&repo.repo).is_err());
-    repo.file_write("Cargo.toml", "[package]\nversion = \"1.0\"\n")?;
-    assert_eq!(rust::crate_version(&repo.repo)?, Some("1.0".to_string()));
+    assert!(rust::crate_data(&repo.repo).is_err());
+    repo.file_write(
+        "Cargo.toml",
+        "[package]\nname = \"test\"\nversion = \"1.0\"\n",
+    )?;
+    let data = rust::crate_data(&repo.repo)?;
+    assert!(data.is_some());
+    let data = data.unwrap();
+    assert_eq!(data.name, "\"test\"".to_string());
+    assert_eq!(data.version, "1.0".to_string());
     repo.file_write("Cargo.toml", "[workspace]\nmembers = [ \"abc\" ]\n")?;
-    assert!(rust::crate_version(&repo.repo)?.is_none());
+    assert!(rust::crate_data(&repo.repo)?.is_none());
     Ok(())
 }
 

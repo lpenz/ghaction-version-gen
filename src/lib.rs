@@ -36,6 +36,7 @@ pub struct Info {
     pub tag_latest_ltrimv: String,
     pub tag_distance_ltrimv: String,
     pub tag_head_ltrimv: Option<String>,
+    pub rust_crate_name: Option<String>,
     pub rust_crate_version: Option<String>,
     pub python_module_version: Option<String>,
     pub version_mismatch: Option<String>,
@@ -73,8 +74,9 @@ impl Info {
     }
 
     pub fn parse_files<P: AsRef<Path>>(&mut self, repo: P) -> Result<()> {
-        if let Some(version) = rust::crate_version(&repo)? {
-            self.rust_crate_version = Some(version);
+        if let Some(cratedata) = rust::crate_data(&repo)? {
+            self.rust_crate_name = Some(cratedata.name);
+            self.rust_crate_version = Some(cratedata.version);
         }
         if let Some(version) = python::module_version(&repo)? {
             self.python_module_version = Some(version);
