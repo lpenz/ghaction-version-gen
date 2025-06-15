@@ -211,7 +211,8 @@ fn gitrepo_tag_before_branch() -> Result<()> {
     assert_eq!(info.tag_distance_ltrimv, Some("1.1.0-0".to_string()));
     assert_eq!(info.version_tagged, None);
     assert_eq!(info.version_commit, None);
-    assert_eq!(info.package_basename, format!("-1.1.0-0-{}", info.commit));
+    assert_eq!(info.rpm_basename, format!("-1.1.0-0-{}", info.commit));
+    assert_eq!(info.deb_basename, format!("_1.1.0-0-{}", info.commit));
     Ok(())
 }
 
@@ -254,7 +255,8 @@ fn gitrepo_rust() -> Result<()> {
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
-    assert_eq!(info.package_basename, "test-1.0.0");
+    assert_eq!(info.rpm_basename, "test-1.0.0");
+    assert_eq!(info.deb_basename, "test_1.0.0");
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
@@ -280,7 +282,8 @@ fn gitrepo_no_tag_rust() -> Result<()> {
     assert_eq!(info.tag_distance, None);
     assert_eq!(info.tag_latest_ltrimv, None);
     assert_eq!(info.tag_distance_ltrimv, None);
-    assert_eq!(info.package_basename, "test");
+    assert_eq!(info.rpm_basename, "test");
+    assert_eq!(info.deb_basename, "test");
     Ok(())
 }
 
@@ -308,10 +311,8 @@ fn gitrepo_after_tag_rust() -> Result<()> {
     assert_eq!(info.rust_crate_version, Some("9.7".to_string()));
     assert_eq!(info.version_mismatch, None);
     assert_eq!(info.version_commit, None);
-    assert_eq!(
-        info.package_basename,
-        format!("test-1.0.0-1-{}", info.commit)
-    );
+    assert_eq!(info.rpm_basename, format!("test-1.0.0-1-{}", info.commit));
+    assert_eq!(info.deb_basename, format!("test_1.0.0-1-{}", info.commit));
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
@@ -343,7 +344,8 @@ fn gitrepo_after_tag_rust_main() -> Result<()> {
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
     assert_eq!(info.version_commit, Some("1.0.0-1".into()));
-    assert_eq!(info.package_basename, format!("test-1.0.0-1"));
+    assert_eq!(info.rpm_basename, format!("test-1.0.0-1"));
+    assert_eq!(info.deb_basename, format!("test_1.0.0-1"));
     ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
     Ok(())
 }
