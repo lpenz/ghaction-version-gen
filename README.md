@@ -115,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.15.1
+        uses: docker://lpenz/ghaction-version-gen:0.16.0
       ...
       - name: deploy
         uses: <deploy action>
