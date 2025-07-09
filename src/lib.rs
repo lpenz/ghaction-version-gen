@@ -123,7 +123,7 @@ impl Info {
         };
         let re = Regex::new(r"^v?(?P<tag_ltrimv>.*)$")?;
         if let Some(ref distance) = self.distance {
-            let dash_distance = format!("-{}", distance);
+            let dash_distance = format!("-{distance}");
             self.dash_distance = Some(dash_distance.clone());
             let tag_distance = format!("{}{}", self.tag_latest, dash_distance);
             self.tag_distance = Some(tag_distance.clone());
@@ -204,16 +204,14 @@ impl Info {
                 if let Some(ref version) = self.rust_crate_version {
                     if version != tag_latest_ltrimv {
                         self.version_mismatch = Some(format!(
-                            "file=Cargo.toml::Version mismatch: tag {} != {} from Cargo.toml",
-                            tag_latest_ltrimv, version
+                            "file=Cargo.toml::Version mismatch: tag {tag_latest_ltrimv} != {version} from Cargo.toml",
                         ));
                     }
                 }
                 if let Some(ref version) = self.python_module_version {
                     if version != tag_latest_ltrimv {
                         self.version_mismatch = Some(format!(
-                            "file=setup.cfg::Version mismatch: tag {} != {} from setup.cfg",
-                            tag_latest_ltrimv, version
+                            "file=setup.cfg::Version mismatch: tag {tag_latest_ltrimv} != {version} from setup.cfg",
                         ));
                     }
                 }
@@ -346,7 +344,7 @@ impl<'a> IntoIterator for &'a Info {
 fn write_github_output(output_filename: &Path, info: &Info) -> Result<()> {
     let mut output = fs::File::options().append(true).open(output_filename)?;
     for (k, v) in info {
-        writeln!(output, "{}={}", k, v)?;
+        writeln!(output, "{k}={v}")?;
     }
     Ok(())
 }
@@ -360,17 +358,17 @@ pub fn main(repo: Option<&Path>) -> Result<()> {
     };
     let info = Info::from_workspace(workspace, env::vars())?;
     for (k, v) in &info {
-        println!("Setting {}={}", k, v);
+        println!("Setting {k}={v}");
     }
     if let Ok(output_filename) = env::var("GITHUB_OUTPUT") {
         write_github_output(Path::new(&output_filename), &info)?;
     }
     if let Some(ref message) = info.version_mismatch {
         if info.is_push_tag == Some(true) {
-            println!("::error {}", message);
+            println!("::error {message}");
             bail!("Version mismatch while pushing tag");
         } else {
-            println!("::warning {}", message);
+            println!("::warning {message}");
         }
     }
     Ok(())
