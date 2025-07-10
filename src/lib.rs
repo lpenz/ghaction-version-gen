@@ -218,7 +218,7 @@ impl Info {
             }
             if self.is_push_tag == Some(true) && self.is_main_here != Some(true) {
                 self.version_mismatch = Some(format!(
-                    "Version tag {} pushed over {}, but main branch is at {:?}",
+                    "file=.git::Version mismatch::Version tag {} pushed over {}, but main branch is at {:?}",
                     tag_latest_ltrimv, self.commit, self.commit_main
                 ));
             }
