@@ -5,8 +5,9 @@
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::Result;
-use anyhow::ensure;
+use color_eyre::Result;
+use color_eyre::eyre::Report;
+use color_eyre::eyre::ensure;
 
 pub fn run<P: AsRef<Path>>(repo: P, args: &[&str]) -> Result<String> {
     let result = Command::new("git")
@@ -22,7 +23,7 @@ pub fn run<P: AsRef<Path>>(repo: P, args: &[&str]) -> Result<String> {
     );
     String::from_utf8(result.stdout)
         .map(|s| s.trim().to_string())
-        .map_err(anyhow::Error::msg)
+        .map_err(Report::from)
 }
 
 pub fn describe<P: AsRef<Path>>(repo: P) -> Result<String> {

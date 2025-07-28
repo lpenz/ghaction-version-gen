@@ -7,13 +7,16 @@ pub mod python;
 pub mod rust;
 
 use std::env;
+use std::error::Error;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::str;
 
-use anyhow::Result;
-use anyhow::bail;
+use clap::Parser;
+
+use color_eyre::Result;
+use color_eyre::eyre::bail;
 
 use regex::Regex;
 
@@ -349,7 +352,7 @@ fn write_github_output(output_filename: &Path, info: &Info) -> Result<()> {
     Ok(())
 }
 
-pub fn main(repo: Option<&Path>) -> Result<()> {
+pub fn process_repo(repo: Option<&Path>) -> Result<()> {
     let curr_dir = env::current_dir()?;
     let workspace = if let Some(path) = repo {
         path
@@ -371,5 +374,16 @@ pub fn main(repo: Option<&Path>) -> Result<()> {
             println!("::warning {message}");
         }
     }
+    Ok(())
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+pub struct Args {}
+
+pub fn main() -> Result<(), Box<dyn Error>> {
+    color_eyre::install()?;
+    Args::parse();
+    process_repo(None)?;
     Ok(())
 }
