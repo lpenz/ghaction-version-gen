@@ -8,8 +8,8 @@ use std::io::Write;
 use std::iter;
 use std::process::Command;
 
-use anyhow::Result;
-use anyhow::ensure;
+use color_eyre::Result;
+use color_eyre::eyre::ensure;
 
 use ghaction_version_gen::Info;
 use ghaction_version_gen::git;
@@ -175,7 +175,7 @@ fn gitrepo() -> Result<()> {
     assert_eq!(info.tag_latest_ltrimv, Some("7.5".to_string()));
     assert_eq!(info.distance, Some("1".to_string()));
     assert_eq!(info.version_docker_ci, "null");
-    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -257,7 +257,7 @@ fn gitrepo_rust() -> Result<()> {
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
     assert_eq!(info.rpm_basename, "test-1.0.0");
     assert_eq!(info.deb_basename, "test_1.0.0");
-    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -313,7 +313,7 @@ fn gitrepo_after_tag_rust() -> Result<()> {
     assert_eq!(info.version_commit, None);
     assert_eq!(info.rpm_basename, format!("test-1.0.0-1-{}", info.commit));
     assert_eq!(info.deb_basename, format!("test_1.0.0-1-{}", info.commit));
-    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -346,7 +346,7 @@ fn gitrepo_after_tag_rust_main() -> Result<()> {
     assert_eq!(info.version_commit, Some("1.0.0-1".into()));
     assert_eq!(info.rpm_basename, format!("test-1.0.0-1"));
     assert_eq!(info.deb_basename, format!("test_1.0.0-1"));
-    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 
@@ -392,7 +392,7 @@ fn gitrepo_python() -> Result<()> {
         info.version_mismatch,
         Some("file=setup.cfg::Version mismatch: tag 1.0.0 != 9.7 from setup.cfg".to_string())
     );
-    ghaction_version_gen::main(Some(repo.repo.as_ref()))?;
+    ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
 

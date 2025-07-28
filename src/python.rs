@@ -4,8 +4,10 @@
 
 use std::path::Path;
 
-use anyhow::Result;
-use anyhow::anyhow;
+use color_eyre::Result;
+use color_eyre::eyre::OptionExt;
+use color_eyre::eyre::eyre;
+
 use configparser::ini::Ini;
 
 pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
@@ -17,11 +19,11 @@ pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
         if e.contains("No such file or directory") {
             return Ok(None);
         } else {
-            return Err(anyhow!("parsing setup.cfg: {}", e));
+            return Err(eyre!("parsing setup.cfg: {}", e));
         }
     }
     let version = config
         .get("metadata", "version")
-        .ok_or_else(|| anyhow!("could not find metadata.version"))?;
+        .ok_or_eyre("could not find metadata.version")?;
     Ok(Some(version))
 }
