@@ -9,7 +9,7 @@ use std::path::Path;
 use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
 
-use toml::Value;
+use toml::Table;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Crate {
@@ -28,7 +28,7 @@ pub fn crate_data<P: AsRef<Path>>(repo: P) -> Result<Option<Crate>> {
         };
     }
     let contents = result.unwrap();
-    let info = contents.parse::<Value>()?;
+    let info = contents.parse::<Table>()?;
     if info.get("workspace").is_some() {
         return Ok(None);
     }
