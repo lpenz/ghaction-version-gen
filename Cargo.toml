@@ -1,7 +1,7 @@
 [package]
 name = "ghaction_version_gen"
 description = "Generate various version options as github action outputs"
-version = "0.17.0"
+version = "0.17.2"
 authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2024"
 license = "MIT"
