@@ -2,7 +2,7 @@
 # This file is subject to the terms and conditions defined in
 # file 'LICENSE', which is part of this source code package.
 
-FROM docker.io/rust:1.87-alpine3.22 AS build
+FROM docker.io/rust:1.89-alpine3.22 AS build
 RUN set -e -x; \
     apk update; \
     apk add --no-cache musl-dev
