@@ -160,20 +160,19 @@ impl Info {
                 .cloned()
                 .unwrap();
         } else if self.is_push_main == Some(true) {
-            if let Some(distance_str) = &self.distance {
-                if let Ok(distance) = distance_str.parse::<u32>() {
-                    if distance > 0 {
-                        // Only set version_commit if we are not putting the
-                        // commit over a tag.
-                        // If we are, then we already had a version_commit on
-                        // the tag itself, or we don't have a tag at all.
-                        self.version_commit = self
-                            .override_version_commit
-                            .as_ref()
-                            .or(self.tag_distance_ltrimv.as_ref())
-                            .cloned();
-                    }
-                }
+            if let Some(distance_str) = &self.distance
+                && let Ok(distance) = distance_str.parse::<u32>()
+                && distance > 0
+            {
+                // Only set version_commit if we are not putting the
+                // commit over a tag.
+                // If we are, then we already had a version_commit on
+                // the tag itself, or we don't have a tag at all.
+                self.version_commit = self
+                    .override_version_commit
+                    .as_ref()
+                    .or(self.tag_distance_ltrimv.as_ref())
+                    .cloned();
             }
             self.version_docker_ci = self
                 .override_version_docker_ci
@@ -204,19 +203,19 @@ impl Info {
         // Warnings
         if let Some(tag_latest_ltrimv) = &self.tag_latest_ltrimv {
             if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
-                if let Some(ref version) = self.rust_crate_version {
-                    if version != tag_latest_ltrimv {
-                        self.version_mismatch = Some(format!(
-                            "file=Cargo.toml::Version mismatch: tag {tag_latest_ltrimv} != {version} from Cargo.toml",
-                        ));
-                    }
+                if let Some(ref version) = self.rust_crate_version
+                    && version != tag_latest_ltrimv
+                {
+                    self.version_mismatch = Some(format!(
+                        "file=Cargo.toml::Version mismatch: tag {tag_latest_ltrimv} != {version} from Cargo.toml",
+                    ));
                 }
-                if let Some(ref version) = self.python_module_version {
-                    if version != tag_latest_ltrimv {
-                        self.version_mismatch = Some(format!(
-                            "file=setup.cfg::Version mismatch: tag {tag_latest_ltrimv} != {version} from setup.cfg",
-                        ));
-                    }
+                if let Some(ref version) = self.python_module_version
+                    && version != tag_latest_ltrimv
+                {
+                    self.version_mismatch = Some(format!(
+                        "file=setup.cfg::Version mismatch: tag {tag_latest_ltrimv} != {version} from setup.cfg",
+                    ));
                 }
             }
             if self.is_push_tag == Some(true) && self.is_main_here != Some(true) {
