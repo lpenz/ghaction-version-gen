@@ -377,7 +377,16 @@ fn toml1() -> Result<()> {
 fn gitrepo_python() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
-    repo.file_write("setup.cfg", "[metadata]\nversion = 9.7\n")?;
+    repo.file_write(
+        "setup.cfg",
+        "[metadata]
+version = 9.7
+
+[options]
+package_dir =
+    = src
+",
+    )?;
     repo.run(&["git", "add", "setup.cfg"])?;
     repo.run(&["git", "commit", "-m", "first commit"])?;
     repo.run(&["git", "tag", "v1.0.0"])?;

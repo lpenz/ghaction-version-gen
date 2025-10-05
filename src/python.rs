@@ -12,8 +12,31 @@ use configparser::ini::Ini;
 
 pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
     let setupcfgfile = repo.as_ref().join("setup.cfg");
+    let content = match std::fs::read_to_string(setupcfgfile) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(e) => {
+            return Err(eyre!(e));
+        }
+    };
+    // Pre-parse the file to get rid of empty keys which are not
+    // supported by configparser:
+    let setupcfg = content
+        .lines()
+        .map(|line| {
+            if line.trim_start().starts_with('=') {
+                // replace "= src" with "__empty__ = src"
+                format!("__empty__{}", line)
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     let mut config = Ini::new();
-    let result = config.load(setupcfgfile);
+    let result = config.read(setupcfg);
     if let Err(e) = result {
         // Could have used a proper error...
         if e.contains("No such file or directory") {
