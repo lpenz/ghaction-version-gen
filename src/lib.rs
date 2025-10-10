@@ -266,6 +266,7 @@ impl<'a> IntoIterator for &'a Info {
     fn into_iter(self) -> Self::IntoIter {
         let mut vec: Vec<(&'static str, &'a str)> = vec![
             ("name", &self.name),
+            ("pwd_basename", &self.pwd_basename),
             ("commit", &self.commit),
             ("git_describe_tags", &self.git_describe_tags),
             ("tag_latest", &self.tag_latest),
