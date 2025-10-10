@@ -380,6 +380,7 @@ fn gitrepo_python() -> Result<()> {
     repo.file_write(
         "setup.cfg",
         "[metadata]
+name = myname
 version = 9.7
 
 [options]
@@ -396,6 +397,7 @@ package_dir =
     info.is_tag = Some(true);
     info.is_main = Some(true);
     info.eval()?;
+    assert_eq!(info.python_module_name, Some("myname".to_string()));
     assert_eq!(info.python_module_version, Some("9.7".to_string()));
     assert_eq!(
         info.version_mismatch,
@@ -409,12 +411,22 @@ package_dir =
 fn setupcfg() -> Result<()> {
     environ_reset();
     let repo = TmpGit::new()?;
-    assert_eq!(python::module_version(&repo.repo)?, None);
+    assert_eq!(python::module_data(&repo.repo)?, None);
     repo.file_write("setup.cfg", "")?;
-    assert!(python::module_version(&repo.repo).is_err());
+    assert!(python::module_data(&repo.repo).is_err());
     repo.file_write("setup.cfg", "[metadata]\n")?;
-    assert!(python::module_version(&repo.repo).is_err());
+    assert!(python::module_data(&repo.repo).is_err());
+    repo.file_write("setup.cfg", "[metadata]\nname = abcde\n")?;
+    assert!(python::module_data(&repo.repo).is_err());
     repo.file_write("setup.cfg", "[metadata]\nversion = 1.0\n")?;
-    assert_eq!(python::module_version(&repo.repo)?, Some("1.0".to_string()));
+    repo.file_write("setup.cfg", "[metadata]\nname = abcde\n")?;
+    repo.file_write("setup.cfg", "[metadata]\nname = abcde\nversion = 1.0\n")?;
+    assert_eq!(
+        python::module_data(&repo.repo)?,
+        Some(python::Data {
+            name: "abcde".to_string(),
+            version: "1.0".to_string()
+        })
+    );
     Ok(())
 }

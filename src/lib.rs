@@ -42,6 +42,7 @@ pub struct Info {
     pub tag_head_ltrimv: Option<String>,
     pub rust_crate_name: Option<String>,
     pub rust_crate_version: Option<String>,
+    pub python_module_name: Option<String>,
     pub python_module_version: Option<String>,
     pub version_mismatch: Option<String>,
     pub version_tagged: Option<String>,
@@ -93,8 +94,9 @@ impl Info {
             self.rust_crate_name = Some(cratedata.name);
             self.rust_crate_version = Some(cratedata.version);
         }
-        if let Some(version) = python::module_version(&repo)? {
-            self.python_module_version = Some(version);
+        if let Some(data) = python::module_data(&repo)? {
+            self.python_module_name = Some(data.name);
+            self.python_module_version = Some(data.version);
         }
         Ok(())
     }
@@ -138,6 +140,8 @@ impl Info {
         }
         // Evaluate version outputs, correlating the previous variables
         self.name = if let Some(name) = &self.rust_crate_name {
+            name.clone()
+        } else if let Some(name) = &self.python_module_name {
             name.clone()
         } else {
             self.pwd_basename.clone()

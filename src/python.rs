@@ -10,7 +10,13 @@ use color_eyre::eyre::eyre;
 
 use configparser::ini::Ini;
 
-pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
+#[derive(Debug, PartialEq, Eq)]
+pub struct Data {
+    pub name: String,
+    pub version: String,
+}
+
+pub fn module_data<P: AsRef<Path>>(repo: P) -> Result<Option<Data>> {
     let setupcfgfile = repo.as_ref().join("setup.cfg");
     let content = match std::fs::read_to_string(setupcfgfile) {
         Ok(s) => s,
@@ -45,8 +51,12 @@ pub fn module_version<P: AsRef<Path>>(repo: P) -> Result<Option<String>> {
             return Err(eyre!("parsing setup.cfg: {}", e));
         }
     }
-    let version = config
-        .get("metadata", "version")
-        .ok_or_eyre("could not find metadata.version")?;
-    Ok(Some(version))
+    Ok(Some(Data {
+        name: config
+            .get("metadata", "name")
+            .ok_or_eyre("could not find metadata.name")?,
+        version: config
+            .get("metadata", "version")
+            .ok_or_eyre("could not find metadata.version")?,
+    }))
 }
