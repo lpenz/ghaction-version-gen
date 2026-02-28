@@ -52,6 +52,7 @@ pub struct Info {
     pub override_version_commit: Option<String>,
     pub override_version_docker_ci: Option<String>,
     pub name: String,
+    pub basename: String,
     pub rpm_basename: String,
     pub deb_basename: String,
 }
@@ -193,14 +194,17 @@ impl Info {
         if let Some(version_commit) = &self.version_commit {
             // If we have a full version_commit, use it.
             // (i.e. we are pushing a tag or main after a tag)
+            self.basename = format!("{}-{}", self.name, version_commit);
             self.rpm_basename = format!("{}-{}", self.name, version_commit);
             self.deb_basename = format!("{}_{}", self.name, version_commit);
         } else if let Some(tag_distance_ltrimv) = &self.tag_distance_ltrimv {
             // If we are pushing non-main after a tag, add the tag-distance and the commit:
+            self.basename = format!("{}-{}-{}", self.name, tag_distance_ltrimv, self.commit);
             self.rpm_basename = format!("{}-{}-{}", self.name, tag_distance_ltrimv, self.commit);
             self.deb_basename = format!("{}_{}-{}", self.name, tag_distance_ltrimv, self.commit);
         } else {
             // Last-resort: if we never had a tag, use the name.
+            self.basename = self.name.clone();
             self.rpm_basename = self.name.clone();
             self.deb_basename = self.name.clone();
         }
@@ -275,6 +279,7 @@ impl<'a> IntoIterator for &'a Info {
             ("git_describe_tags", &self.git_describe_tags),
             ("tag_latest", &self.tag_latest),
             ("version_docker_ci", &self.version_docker_ci),
+            ("basename", &self.basename),
             ("rpm_basename", &self.rpm_basename),
             ("deb_basename", &self.deb_basename),
         ];
