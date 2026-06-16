@@ -11,11 +11,11 @@ categories = ["command-line-utilities"]
 keywords = ["github-action", "version-generate"]
 
 [dependencies]
-clap = { version = "4.5.60", features = ["derive"] }
-regex = "1.12.3"
+clap = { version = "4.6.1", features = ["derive"] }
+regex = "1.13.0"
 color-eyre = "0.6.5"
-toml = "1.0.3"
-configparser = "3.1.0"
+toml = "1.1.2"
+configparser = "3.2.0"
 
 [dev-dependencies]
-tempfile = "3.26.0"
+tempfile = "3.27.0"
