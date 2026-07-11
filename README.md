@@ -12,7 +12,7 @@ number for you to use in a deploy action.
 There are many ways to generate version information for a
 repository. They usually involve processing `GITHUB_REF` in some
 [way](https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions),
-maybe using even using [github-script](https://github.com/actions/github-script).
+maybe even using [github-script](https://github.com/actions/github-script).
 
 This repository is also an example of how to create a docker github
 action that compiles a rust entrypoint in a container and then moves
@@ -29,18 +29,19 @@ ones used for versioning:
 
   The output itself is the tag, with the optional `v` stripped.
 
-  This output can be overriden via the `OVERRIDE_VERSION_TAGGED`
+  This output can be overridden via the `OVERRIDE_VERSION_TAGGED`
   environment variable.
 
 - `version_commit`: for repositories that deploy on tags and on all
   commits to `master` or `main`. It's defined if the github event was
-  a push of a tag or of one of those branches.
+  a push of a tag or of one of those branches (but only when the
+  commit is not on a tag itself, i.e. `distance` > 0).
 
-  The output itself is the the tag that was pushed, or the most recent
+  The output itself is the tag that was pushed, or the most recent
   tag on the branch followed by the distance between the branch and
   the tag (always with the `v` stripped).
 
-  This output can be overriden via the `OVERRIDE_VERSION_COMMIT`
+  This output can be overridden via the `OVERRIDE_VERSION_COMMIT`
   environment variable.
 
 - `version_docker_ci`: for repositories that deploy to
@@ -51,16 +52,16 @@ ones used for versioning:
   use the variable as the version for the [build-push-action], which
   doesn't like empty strings.
 
-  This output can be overriden via the `OVERRIDE_VERSION_DOCKER_CI`
+  This output can be overridden via the `OVERRIDE_VERSION_DOCKER_CI`
   environment variable.
 
 
-You can these variables in action in the [Examples](#examples) section.
+You can see these variables in action in the [Examples](#examples) section.
 
 This github action is also able to check if a project-specific version
-matches with the latest tags. At the moment, only rust's *Cargo.toml*
-file is checked. If there's a mismatch and a new tag is being pushed,
-the action fails.
+matches with the latest tags. At the moment, rust's *Cargo.toml* and
+python's *setup.cfg* files are checked. If there's a mismatch and a
+new tag is being pushed, the action fails.
 
 
 ### Secondary outputs
@@ -86,10 +87,10 @@ or as alternative versioning schemes:
 - `distance`: the distance between the current commit and `tag_latest`.
 - `tag_distance`: `tag_latest-distance`
 - `tag_head`: the tag on HEAD, if there's a tag on HEAD (does not
-  depend on the gitub event).
+  depend on the github event).
 - `dash_distance`: `-` prepended to `distance`
 - `tag_latest_ltrimv`: `tag_latest` without the optional leading `v`.
-- `tag_head_ltrimv`: `tag_head` without the optionsl leading `v`, if
+- `tag_head_ltrimv`: `tag_head` without the optional leading `v`, if
   `tag_head` was defined.
 - `rust_crate_version`: the version in *Cargo.toml* if it exists.
 - `version_tagged`: `tag_head_ltrimv` if `is_push_tag`.
@@ -113,9 +114,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.16.1
+        uses: docker://lpenz/ghaction-version-gen:0.19.0
       ...
       - name: deploy
         uses: <deploy action>
@@ -139,7 +140,7 @@ to deploy every time `main` is pushed.
 
 The `version_docker_ci` variable was designed to work with the
 docker's [build-push-action].  It should be used in projects where we
-would use want to deploy from tags and from `main`/`master`, but we
+want to deploy from tags and from `main`/`master`, but we
 want `main`/`master` to be identified as `latest` in docker hub.
 
 This is how it's used:
@@ -149,14 +150,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - id: version
-        uses: docker://lpenz/ghaction-version-gen:0.13.4
-      - uses: docker/login-action@v1
+        uses: docker://lpenz/ghaction-version-gen:0.19.0
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v5
         with:
           push: ${{ steps.version.outputs.version_docker_ci != 'null' }}
           tags: ${{ github.repository }}:${{ steps.version.outputs.version_docker_ci }}
