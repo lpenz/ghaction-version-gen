@@ -344,8 +344,8 @@ fn gitrepo_after_tag_rust_main() -> Result<()> {
         Some("file=Cargo.toml::Version mismatch: tag 1.0.0 != 9.7 from Cargo.toml".to_string())
     );
     assert_eq!(info.version_commit, Some("1.0.0-1".into()));
-    assert_eq!(info.rpm_basename, format!("test-1.0.0-1"));
-    assert_eq!(info.deb_basename, format!("test_1.0.0-1"));
+    assert_eq!(info.rpm_basename, "test-1.0.0-1");
+    assert_eq!(info.deb_basename, "test_1.0.0-1");
     ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }
