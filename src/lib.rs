@@ -55,7 +55,14 @@ pub struct Info {
     pub basename: String,
     pub rpm_basename: String,
     pub deb_basename: String,
+    pub arch: String,
+    pub info_json: String,
 }
+
+pub const ARCH: &str = r#"[
+    {"runs": "ubuntu-latest", "rust": "x86_64-unknown-linux-musl", "deb": "amd64", "rpm": "x86_64" },
+    {"runs": "ubuntu-24.04-arm", "rust": "aarch64-unknown-linux-musl", "deb": "arm64", "rpm": "aarch64"}
+]"#;
 
 impl Info {
     pub fn parse_env(&mut self, enviter: impl Iterator<Item = (String, String)>) {
@@ -208,6 +215,19 @@ impl Info {
             self.rpm_basename = self.name.clone();
             self.deb_basename = self.name.clone();
         }
+        // Arch and info_json
+        self.arch = ARCH.to_string();
+        let version_tagged = self.version_tagged.as_deref().unwrap_or("");
+        let version_commit = self.version_commit.as_deref().unwrap_or("");
+        self.info_json = format!(
+            r#"{{"version_tagged":"{}","version_commit":"{}","basename":"{}","deb_basename":"{}","rpm_basename":"{}","arch":{}}}"#,
+            version_tagged,
+            version_commit,
+            self.basename,
+            self.deb_basename,
+            self.rpm_basename,
+            self.arch,
+        );
         // Warnings
         if let Some(tag_latest_ltrimv) = &self.tag_latest_ltrimv {
             if self.is_push_tag == Some(true) || self.is_push_main == Some(true) {
@@ -282,6 +302,8 @@ impl<'a> IntoIterator for &'a Info {
             ("basename", &self.basename),
             ("rpm_basename", &self.rpm_basename),
             ("deb_basename", &self.deb_basename),
+            ("arch", &self.arch),
+            ("info_json", &self.info_json),
         ];
         if let Some(ref v) = self.is_push {
             vec.push(("is_push", bool2str(*v)));
@@ -355,8 +377,19 @@ impl<'a> IntoIterator for &'a Info {
 
 fn write_github_output(output_filename: &Path, info: &Info) -> Result<()> {
     let mut output = fs::File::options().append(true).open(output_filename)?;
+    let values: Vec<&str> = info.into_iter().map(|(_, v)| v).collect();
+    let mut delim = "ghactionversiongen".to_string();
+    while values.iter().any(|v| v.contains(&delim)) {
+        delim.push('_');
+    }
     for (k, v) in info {
-        writeln!(output, "{k}={v}")?;
+        if v.contains('\n') {
+            writeln!(output, "{k}<<{delim}")?;
+            writeln!(output, "{v}")?;
+            writeln!(output, "{delim}")?;
+        } else {
+            writeln!(output, "{k}={v}")?;
+        }
     }
     Ok(())
 }

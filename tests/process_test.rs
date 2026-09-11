@@ -257,6 +257,14 @@ fn gitrepo_rust() -> Result<()> {
     assert_eq!(info.version_commit, Some("1.0.0".to_string()));
     assert_eq!(info.rpm_basename, "test-1.0.0");
     assert_eq!(info.deb_basename, "test_1.0.0");
+    assert_eq!(
+        info.info_json,
+        format!(
+            r#"{{"version_tagged":"1.0.0","version_commit":"1.0.0","basename":"test-1.0.0","deb_basename":"test_1.0.0","rpm_basename":"test-1.0.0","arch":{}}}"#,
+            ghaction_version_gen::ARCH,
+        )
+    );
+    assert!(info.info_json.contains(&info.arch));
     ghaction_version_gen::process_repo(Some(repo.repo.as_ref()))?;
     Ok(())
 }

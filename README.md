@@ -55,6 +55,26 @@ ones used for versioning:
   This output can be overridden via the `OVERRIDE_VERSION_DOCKER_CI`
   environment variable.
 
+- `info_json`: JSON string combining the version and basename outputs
+  with the supported architectures, usable as a single input to pass
+  between workflows. It has the form:
+
+  ```json
+  {
+    "version_tagged": "<tag, v stripped, or empty>",
+    "version_commit": "<tag-distance, or empty>",
+    "basename": "<name-version_commit>",
+    "deb_basename": "<name_version_commit>",
+    "rpm_basename": "<name-version_commit>",
+    "arch": [
+      {"runs": "ubuntu-latest", "rust": "x86_64-unknown-linux-musl", "deb": "amd64", "rpm": "x86_64"},
+      {"runs": "ubuntu-24.04-arm", "rust": "aarch64-unknown-linux-musl", "deb": "arm64", "rpm": "aarch64"}
+    ]
+  }
+  ```
+
+- `arch`: JSON array from the `arch` field of `info_json`, if you only
+  need the supported architectures.
 
 You can see these variables in action in the [Examples](#examples) section.
 

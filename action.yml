@@ -22,6 +22,16 @@ outputs:
       The output itself is the most recent tag on the branch, with the
       optional `v` stripped, followed by the distance between the branch
       and the tag.
+  arch:
+    description: >
+      JSON array with the supported architectures, each entry mapping the
+      same logical architecture across GitHub runner, rust target, and
+      deb/rpm naming schemes.
+  info_json:
+    description: >
+      JSON string combining version_tagged, version_commit, basename,
+      deb_basename, rpm_basename and arch, ready to be passed as a single
+      input between workflows.
 runs:
   using: 'docker'
   image: 'Dockerfile'
